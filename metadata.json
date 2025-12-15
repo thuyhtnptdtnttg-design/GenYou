@@ -1,0 +1,5 @@
+{
+  "name": "GenYou ",
+  "description": "A youth-oriented MBTI assessment tool for high school students. Features a friendly UI, automated scoring, and a digital 'Learning Passport' with personalized study advice powered by Gemini.",
+  "requestFramePermissions": []
+}
