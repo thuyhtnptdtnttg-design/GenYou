@@ -25,7 +25,6 @@ import StudyHubSummary from './components/StudyHubSummary';
 import BrainCandyScreen from './components/BrainCandyScreen';
 import ComprehensiveReportScreen from './components/ComprehensiveReportScreen';
 import AdminDashboard from './components/AdminDashboard';
-import LearningPassportScreen from './components/LearningPassportScreen';
 import { ScreenState, StudentResult } from './types';
 
 const App: React.FC = () => {
@@ -46,7 +45,6 @@ const App: React.FC = () => {
   const handleGoToSOSResources = () => setScreen('sos_resources');
   const handleGoToStudyHub = () => setScreen('studyhub');
   const handleGoToBrainCandy = () => setScreen('braincandy');
-  const handleGoToLearningPassport = () => setScreen('learning_passport');
 
   const handleSelectMBTI = () => setScreen('intro_mbti');
   const handleStartMBTIQuiz = () => setScreen('quiz_mbti');
@@ -117,19 +115,12 @@ const App: React.FC = () => {
         <HomeScreen 
           studentName={currentUser.name}
           studentGrade={currentUser.grade}
-          onSelectGenYou={handleGoToLearningPassport} // Giờ đây GenYou dẫn về Journey Passport
+          onSelectGenYou={handleGoToTests}
           onSelectChill={handleGoToChill}
           onSelectSOS={handleGoToSOS}
           onSelectStudyHub={handleGoToStudyHub}
           onSelectBrainCandy={handleGoToBrainCandy}
           onLogout={handleFullReset}
-        />
-      )}
-
-      {screen === 'learning_passport' && (
-        <LearningPassportScreen 
-          studentName={currentUser.name}
-          onBack={handleBackToHome}
         />
       )}
 

@@ -9,7 +9,6 @@ import {
   ChevronDown, GraduationCap, Timer, Smile, Download, Eye, EyeOff
 } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
-import { recordInteraction } from '../services/storageService';
 
 interface Props {
   studentName: string;
@@ -149,17 +148,6 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
     setLoading(true);
     const duration = Math.floor((Date.now() - startTime) / 1000);
     const timeStr = `${Math.floor(duration / 60)} phút ${duration % 60} giây`;
-    
-    // Ghi nhận vào Learning Passport
-    recordInteraction({
-      timestamp: Date.now(),
-      module: 'BrainCandy',
-      activityType: 'Học tập',
-      duration: duration,
-      status: quizScore >= 3 ? 'Hoàn thành' : 'Một phần',
-      state: quizScore >= 4 ? 'Tích cực' : 'Bình thường'
-    });
-
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     try {
@@ -172,9 +160,10 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
       
       Hãy thực hiện 3 nhiệm vụ:
       1. Đánh giá mức độ tiếp thu kiến thức.
-      2. Đề xuất hướng học tiếp theo phù hợp.
+      2. Đề xuất hướng học tiếp theo phù hợp (nếu sai nhiều: gợi ý ôn lại phần nào; nếu tốt: gợi ý nâng mức độ hoặc học tiếp chủ đề liên quan).
       3. Điều chỉnh độ khó cho lần học tiếp theo.
-      Giọng văn thân thiện, khích lệ.`;
+      
+      Giọng văn thân thiện, khích lệ. Nếu học quá 20p, hãy nhắc nghỉ ngơi tại SOSMood/ChillZone. Trả lời bằng tiếng Việt, text thuần.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -193,11 +182,13 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
 
   return (
     <div className="min-h-screen bg-[#FFFDF5] font-hand p-4 md:p-8 flex flex-col items-center overflow-x-hidden relative">
+      {/* Background Decor */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03]" 
            style={{ backgroundImage: 'radial-gradient(#000 2px, transparent 2px)', backgroundSize: '30px 30px' }}></div>
 
       <div className="w-full max-w-5xl z-10 space-y-6">
         
+        {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-center bg-white border-4 border-black p-6 rounded-3xl shadow-comic gap-4">
           <div className="flex items-center gap-4">
              <div className="p-3 bg-pink-500 rounded-2xl border-2 border-black rotate-[-3deg] shadow-comic-hover">
@@ -294,6 +285,9 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                       {currentLesson.subject} • Lớp {currentLesson.grade} • {currentLesson.level}
                     </p>
                   </div>
+                  <div className="hidden md:block">
+                     <Brain size={48} className="text-slate-200" />
+                  </div>
                </div>
 
                <div className="space-y-10">
@@ -320,6 +314,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                          <div key={i} className="bg-blue-50 border-4 border-dashed border-blue-200 p-6 rounded-[2rem] space-y-3">
                             <p className="font-black text-lg text-blue-900">Ví dụ {i+1}: {ex.example}</p>
                             <div className="bg-white p-4 rounded-xl border-2 border-blue-100 text-sm font-bold text-slate-600">
+                               <span className="text-blue-500 uppercase text-[10px] block mb-1">Hướng dẫn giải:</span>
                                {ex.solution}
                             </div>
                          </div>
@@ -333,7 +328,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                     onClick={() => { setFlashcardIdx(0); setShowFlashcardAnswer(false); setStep('flashcards'); }}
                     className="bg-black text-white px-12 py-5 rounded-[2rem] font-black text-2xl shadow-comic hover:shadow-none active:scale-95 transition-all flex items-center gap-3"
                   >
-                    XEM THẺ GHI NHỚ <ArrowRight />
+                    XEM THẺ GHI NHỚ (5 CARDS) <ArrowRight />
                   </button>
                </div>
             </div>
@@ -363,7 +358,9 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                       <AnimatePresence mode="wait">
                          {showFlashcardAnswer ? (
                            <motion.div 
-                             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                             initial={{ opacity: 0, y: 10 }} 
+                             animate={{ opacity: 1, y: 0 }}
+                             exit={{ opacity: 0, y: -10 }}
                              className="bg-slate-50 border-4 border-dashed border-slate-200 p-8 rounded-[2rem]"
                            >
                               <p className="text-2xl md:text-3xl font-bold text-teal-600 leading-relaxed italic">
@@ -373,7 +370,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                          ) : (
                            <button 
                              onClick={() => setShowFlashcardAnswer(true)}
-                             className="w-full py-12 border-4 border-dotted border-pink-200 rounded-[2rem] flex flex-col items-center justify-center gap-3 text-pink-300 hover:text-pink-500 transition-all group"
+                             className="w-full py-12 border-4 border-dotted border-pink-200 rounded-[2rem] flex flex-col items-center justify-center gap-3 text-pink-300 hover:text-pink-500 hover:border-pink-400 transition-all group"
                            >
                               <Eye size={40} className="group-hover:scale-110 transition-transform" />
                               <span className="text-xl font-black uppercase tracking-widest">Nhấn để hiện nội dung</span>
@@ -388,17 +385,17 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                 <button 
                   onClick={() => { if(flashcardIdx > 0) { setFlashcardIdx(prev => prev -1); setShowFlashcardAnswer(false); } }}
                   disabled={flashcardIdx === 0}
-                  className="flex-1 bg-white border-4 border-black p-5 rounded-2xl font-black shadow-comic-hover disabled:opacity-30"
+                  className="flex-1 bg-white border-4 border-black p-5 rounded-2xl font-black shadow-comic-hover disabled:opacity-30 flex items-center justify-center gap-2"
                 >TRƯỚC</button>
                 {flashcardIdx < 4 ? (
                   <button 
                    onClick={() => { setFlashcardIdx(prev => prev + 1); setShowFlashcardAnswer(false); }}
-                   className="flex-1 bg-white border-4 border-black p-5 rounded-2xl font-black shadow-comic-hover"
+                   className="flex-1 bg-white border-4 border-black p-5 rounded-2xl font-black shadow-comic-hover flex items-center justify-center gap-2"
                   >TIẾP THEO</button>
                 ) : (
                   <button 
                    onClick={() => { setQuizIdx(0); setQuizScore(0); setSelectedAnswer(null); setShowExplanation(false); setStep('quiz'); }}
-                   className="flex-1 bg-pink-500 text-white border-4 border-black p-5 rounded-2xl font-black shadow-comic active:scale-95"
+                   className="flex-1 bg-pink-500 text-white border-4 border-black p-5 rounded-2xl font-black shadow-comic active:scale-95 flex items-center justify-center gap-2"
                   >KIỂM TRA NHANH</button>
                 )}
              </div>
@@ -408,7 +405,12 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
         {step === 'quiz' && currentLesson && (
           <div className="flex flex-col items-center space-y-8 w-full max-w-3xl mx-auto pb-10">
              <header className="w-full flex justify-between items-center px-2">
-                <h2 className="text-2xl font-black text-slate-900 uppercase">Câu hỏi {quizIdx + 1}/5</h2>
+                <div className="flex items-center gap-3">
+                   <div className="bg-white border-4 border-black w-14 h-14 rounded-2xl flex items-center justify-center shadow-comic-hover">
+                      <HelpCircle className="text-pink-500" />
+                   </div>
+                   <h2 className="text-2xl font-black text-slate-900 uppercase">Câu hỏi {quizIdx + 1}/5</h2>
+                </div>
                 <div className="bg-slate-100 px-6 py-2 rounded-full font-black text-slate-400 border-2 border-slate-200">
                    Đúng: <span className="text-pink-500">{quizScore}</span>
                 </div>
@@ -465,9 +467,9 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
           <div className="flex flex-col items-center space-y-10 w-full max-w-4xl mx-auto pb-20">
              <div className="text-center space-y-2">
                 <div className="inline-flex bg-pink-100 text-pink-600 px-6 py-1.5 rounded-full border-2 border-black font-black uppercase text-sm mb-4">
-                   KẾT QUẢ NĂNG LỰC
+                   PHẦN 4: ĐIỀU CHỈNH CÁ NHÂN HÓA
                 </div>
-                <h2 className="text-5xl font-black text-slate-900 tracking-tighter">Hành trình học tập hôm nay</h2>
+                <h2 className="text-5xl font-black text-slate-900 tracking-tighter">Báo cáo năng lực học tập</h2>
                 <p className="text-slate-400 font-bold text-xl">Dành cho {studentName}</p>
              </div>
 
@@ -477,11 +479,14 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                       <div className={`w-24 h-24 rounded-full border-4 border-black flex items-center justify-center text-4xl font-black ${quizScore >= 4 ? 'bg-emerald-400' : quizScore >= 3 ? 'bg-yellow-400' : 'bg-red-400'}`}>
                          {quizScore}/5
                       </div>
-                      <p className="font-black text-slate-900 uppercase">Độ chính xác</p>
+                      <div>
+                        <p className="font-black text-slate-900 uppercase">Độ chính xác</p>
+                        <p className="text-slate-400 font-bold text-sm">Mục tiêu: 5/5</p>
+                      </div>
                    </div>
 
                    <div className="bg-white border-4 border-black p-8 rounded-[2.5rem] shadow-comic flex flex-col items-center gap-2">
-                      <label className="text-xs font-black text-slate-400 uppercase">Tự tin của em</label>
+                      <label className="text-xs font-black text-slate-400 uppercase">Tự tin của bạn</label>
                       <div className="flex gap-2 w-full">
                          {['Thấp', 'Trung bình', 'Cao'].map(c => (
                            <button 
@@ -491,11 +496,32 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                          ))}
                       </div>
                    </div>
+
+                   <div className="bg-amber-100 border-4 border-black p-6 rounded-[2.5rem] shadow-comic flex items-center gap-4">
+                      <div className="bg-white p-3 rounded-xl border-2 border-black">
+                         <Timer size={24} className="text-amber-600" />
+                      </div>
+                      <div>
+                         <p className="text-[10px] font-black text-amber-800 uppercase">Thời gian học</p>
+                         <p className="text-lg font-black text-slate-900">
+                           {Math.floor((Date.now() - startTime) / 60000)} phút
+                         </p>
+                      </div>
+                   </div>
                 </div>
 
                 <div className="md:col-span-2 bg-white border-4 border-black rounded-[3rem] p-8 md:p-12 shadow-comic relative overflow-hidden flex flex-col">
+                   <div className="absolute top-0 right-0 bg-pink-500 text-white px-6 py-2 rounded-bl-3xl font-black text-sm border-l-4 border-b-4 border-black">
+                      BrainCandy Assessment
+                   </div>
                    <div className="flex-1 space-y-6">
-                      <h3 className="text-2xl font-black text-slate-900 uppercase italic">Phân tích nỗ lực cá nhân</h3>
+                      <div className="flex items-center gap-4 mb-4">
+                         <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center text-pink-500 border-2 border-pink-200">
+                            <Smile size={24} />
+                         </div>
+                         <h3 className="text-2xl font-black text-slate-900 uppercase italic">Phân tích từ BrainCandy</h3>
+                      </div>
+                      
                       <div className="prose prose-slate max-w-none">
                          <p className="text-xl font-bold text-slate-700 leading-relaxed italic whitespace-pre-line">
                            "{personalFeedback}"
@@ -506,14 +532,21 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                    <div className="mt-10 pt-10 border-t-4 border-dashed border-slate-100 flex flex-col md:flex-row gap-4">
                       <button 
                         onClick={() => { setStep('setup'); setCurrentLesson(null); }}
-                        className="flex-1 bg-black text-white py-5 rounded-2xl font-black shadow-comic active:scale-95"
+                        className="flex-1 bg-black text-white py-5 rounded-2xl font-black shadow-comic hover:shadow-none active:scale-95 transition-all uppercase tracking-tighter"
                       >HỌC TIẾP CHỦ ĐỀ KHÁC</button>
                       <button 
-                        onClick={onBack}
-                        className="flex-1 bg-white border-4 border-black text-slate-900 py-5 rounded-2xl font-black shadow-comic-hover active:scale-95"
-                      >VỀ TRANG CHỦ</button>
+                        className="flex-1 bg-white border-4 border-black text-slate-900 py-5 rounded-2xl font-black shadow-comic-hover active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-tighter"
+                      >
+                        <Download size={18} /> LƯU PASSPORT
+                      </button>
                    </div>
                 </div>
+             </div>
+
+             <div className="text-center max-w-md">
+                <p className="text-slate-400 font-bold text-sm italic">
+                  Lưu ý: Học tập là một hành trình dài. Nếu cảm thấy mệt, hãy dành 5 phút nghỉ ngơi tại ChillZone hoặc chia sẻ cùng SOSMood nhé!
+                </p>
              </div>
           </div>
         )}
