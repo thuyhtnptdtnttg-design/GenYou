@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import GenYouBot from './GenYouBot';
@@ -11,6 +12,7 @@ interface Props {
   onSelectIQ: () => void;
   onSelectEQ: () => void;
   onSelectDISC: () => void;
+  onSelectChill: () => void;
   onSelectReport: () => void;
   onBack: () => void;
 }
@@ -84,36 +86,30 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
         />
 
         {/* DISC Option */}
-        <div className="md:col-span-2">
-          <MenuItem 
-            onClick={onSelectDISC}
-            color="bg-red-100"
-            iconBg="bg-red-300"
-            hoverIconBg="group-hover:bg-red-400"
-            title="DISC TEST"
-            desc="Thấu hiểu phong cách hành vi."
-            count="21 câu"
-            Icon={DoodleTarget}
-          />
-        </div>
-      </div>
+        <MenuItem 
+          onClick={onSelectDISC}
+          color="bg-red-100"
+          iconBg="bg-red-300"
+          hoverIconBg="group-hover:bg-red-400"
+          title="DISC TEST"
+          desc="Thấu hiểu phong cách hành vi."
+          count="21 câu"
+          Icon={DoodleTarget}
+        />
 
-      {/* Comprehensive Report Button */}
-      <div className="w-full max-w-5xl px-6 pb-8 z-10">
-         <motion.button
+        {/* Comprehensive Report Button (Occupies 1 slot on grid) */}
+        <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onSelectReport}
-            className="w-full bg-black rounded-[2rem] p-3 shadow-comic hover:shadow-comic-hover transition-all flex group"
+            className="w-full bg-black rounded-[2rem] p-2.5 shadow-comic hover:shadow-comic-hover transition-all flex group"
           >
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 w-full rounded-[1.5rem] p-6 flex items-center justify-center gap-6 border-2 border-gray-700 relative overflow-hidden">
-                <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity"></div>
-                <Sparkles size={40} className="text-yellow-400 animate-pulse shrink-0" />
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 w-full rounded-[1.5rem] p-5 flex items-center justify-center gap-4 border-2 border-gray-700 relative overflow-hidden">
+                <Sparkles size={32} className="text-yellow-400 animate-pulse shrink-0" />
                 <div className="text-left flex-1">
-                  <h2 className="text-2xl md:text-3xl font-black leading-none uppercase text-yellow-400 mb-1">Xem Báo Cáo Tổng Hợp</h2>
-                  <p className="text-sm md:text-base text-gray-300 font-bold">Phân tích AI từ tất cả kết quả của bạn</p>
+                  <h2 className="text-xl md:text-2xl font-black leading-none uppercase text-yellow-400 mb-1">Báo Cáo Tổng Hợp</h2>
+                  <p className="text-xs text-gray-300 font-bold">Phân tích AI từ tất cả kết quả</p>
                 </div>
-                <Sparkles size={40} className="text-yellow-400 animate-pulse shrink-0 hidden md:block" />
             </div>
          </motion.button>
       </div>
@@ -134,10 +130,10 @@ const MenuItem = ({ onClick, color, iconBg, hoverIconBg, title, desc, count, Ico
       <div className={`w-16 h-16 md:w-20 md:h-20 ${iconBg} rounded-full flex items-center justify-center border-[3px] md:border-4 border-black ${hoverIconBg} shrink-0`}>
         <Icon size={32} className="text-black md:w-10 md:h-10" />
       </div>
-      <div className="flex flex-col items-start gap-1 md:gap-2 text-left min-w-0">
+      <div className="flex flex-col items-start gap-1 md:gap-2 text-left min-w-0 flex-1">
          <h2 className="text-2xl md:text-4xl font-black text-black leading-none uppercase truncate w-full">{title}</h2>
          <p className="text-sm md:text-lg font-bold text-gray-800 leading-tight">{desc}</p>
-         <span className="text-xs md:text-sm bg-white border-2 border-black px-3 py-1 rounded-full font-bold">{count}</span>
+         <span className="text-xs md:text-sm bg-white border-2 border-black px-3 py-1 rounded-full font-bold w-fit">{count}</span>
       </div>
     </div>
   </motion.button>
