@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Heart, Zap, BookOpen, Wind, 
-  MessageSquare, Book, ChevronRight, Send
+  MessageSquare, Book, ChevronRight, Send, RefreshCw
 } from 'lucide-react';
 import GenYouBot from './GenYouBot';
+import { getSOSMoodResponse } from '../services/geminiService';
+import { recordInteraction } from '../services/storageService';
 
 interface Props {
   onBack: () => void;
@@ -14,14 +16,62 @@ interface Props {
 
 type ChatMode = 'tam-su' | 'dong-luc' | 'mua-thi';
 
+interface Message {
+  role: 'user' | 'model';
+  text: string;
+}
+
 const SOSMoodScreen: React.FC<Props> = ({ onBack, onGoToResources }) => {
   const [mode, setMode] = useState<ChatMode>('tam-su');
   const [showBreathing, setShowBreathing] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'model', text: "Chào bạn! Mình là SOS Mood. Bạn đang cảm thấy thế nào? Hãy chọn một chế độ trò chuyện bên trái để mình hỗ trợ bạn tốt nhất nhé! 🌿" }
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [startTime] = useState(Date.now());
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading]);
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+    
+    const userMsg = input;
+    setInput('');
+    const newMessages = [...messages, { role: 'user', text: userMsg } as Message];
+    setMessages(newMessages);
+    setLoading(true);
+
+    // Call Gemini for psychological response
+    const response = await getSOSMoodResponse(userMsg, messages);
+    setMessages(prev => [...prev, { role: 'model', text: response }]);
+    setLoading(false);
+  };
+
+  const handleFinishSession = () => {
+    const durationSec = Math.floor((Date.now() - startTime) / 1000);
+    recordInteraction({
+      timestamp: Date.now(),
+      module: 'SOSMood',
+      activityType: 'Tự nhìn lại',
+      duration: durationSec,
+      status: 'Hoàn thành',
+      state: messages.length > 5 ? 'Tích cực' : 'Bình thường'
+    });
+    onBack();
+  };
 
   return (
     <div className="min-h-screen bg-white flex font-sans overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-80 bg-[#FFF5F7] border-r border-pink-100 flex flex-col p-6 overflow-y-auto">
+      <aside className="w-80 bg-[#FFF5F7] border-r border-pink-100 flex flex-col p-6 overflow-y-auto hidden md:flex">
         <div className="flex items-center gap-3 mb-10">
            <div className="bg-[#2DD4BF] p-2 rounded-xl border border-teal-800/20 shadow-sm">
              <MessageSquare className="text-white" size={24} />
@@ -80,7 +130,7 @@ const SOSMoodScreen: React.FC<Props> = ({ onBack, onGoToResources }) => {
         </div>
 
         <button 
-          onClick={onBack}
+          onClick={handleFinishSession}
           className="mt-8 flex items-center justify-center gap-2 px-6 py-3 bg-white border-4 border-black rounded-xl font-black text-slate-900 shadow-comic hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all active:scale-95"
         >
           <ArrowLeft size={20} /> Quay lại
@@ -93,28 +143,73 @@ const SOSMoodScreen: React.FC<Props> = ({ onBack, onGoToResources }) => {
         <div className="absolute inset-0 pointer-events-none opacity-[0.02]" 
            style={{ backgroundImage: 'radial-gradient(#000 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
 
-        <div className="flex-1 p-10 overflow-y-auto z-10">
-           {/* Bot Greeting Bubble */}
-           <div className="flex items-start gap-4 mb-8">
-              <GenYouBot mood="happy" className="w-12 h-12 shrink-0" />
-              <div className="bg-[#F0FDFA] border border-[#2DD4BF]/30 p-5 rounded-2xl rounded-tl-none max-w-2xl shadow-sm">
-                 <p className="text-teal-900 font-bold leading-relaxed">
-                   Chào bạn! Mình là SOS Mood. Bạn đang cảm thấy thế nào? Hãy chọn một chế độ trò chuyện bên trái để mình hỗ trợ bạn tốt nhất nhé! 🌿
-                 </p>
-              </div>
-           </div>
+        {/* Mobile Header */}
+        <div className="md:hidden p-4 bg-[#FFF5F7] border-b flex justify-between items-center">
+            <h2 className="font-black text-xl text-teal-600 uppercase italic">SOS Mood</h2>
+            <button onClick={handleFinishSession} className="p-2 bg-white border-2 border-black rounded-lg shadow-comic-hover"><ArrowLeft size={18}/></button>
+        </div>
+
+        <div className="flex-1 p-6 md:p-10 overflow-y-auto z-10 space-y-6 custom-scrollbar">
+           <AnimatePresence initial={false}>
+             {messages.map((m, i) => (
+               <motion.div 
+                 key={i}
+                 initial={{ opacity: 0, y: 10 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+               >
+                 <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                   <div className="shrink-0 mt-1">
+                      {m.role === 'model' ? (
+                        <div className="w-10 h-10 bg-white rounded-full border-2 border-teal-200 flex items-center justify-center shadow-sm">
+                           <GenYouBot mood="happy" className="w-8 h-8" />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 bg-black rounded-full border-2 border-white flex items-center justify-center text-white font-black text-[10px] shadow-sm">EM</div>
+                      )}
+                   </div>
+                   <div className={`p-4 rounded-2xl font-bold text-lg shadow-sm leading-relaxed
+                      ${m.role === 'user' 
+                        ? 'bg-teal-500 text-white rounded-tr-none' 
+                        : 'bg-gray-50 text-slate-800 border border-slate-200 rounded-tl-none'
+                      }
+                   `}>
+                     {m.text}
+                   </div>
+                 </div>
+               </motion.div>
+             ))}
+           </AnimatePresence>
+
+           {loading && (
+             <div className="flex justify-start gap-3">
+                <div className="shrink-0"><GenYouBot mood="thinking" className="w-10 h-10" /></div>
+                <div className="bg-white border-2 border-slate-100 rounded-full px-6 py-3 flex items-center gap-2 shadow-sm">
+                   <RefreshCw size={14} className="animate-spin text-teal-500" />
+                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest italic">Mình đang lắng nghe...</span>
+                </div>
+             </div>
+           )}
+           <div ref={chatEndRef} />
         </div>
 
         {/* Input area */}
-        <div className="p-8 bg-white z-10 border-t border-gray-100">
-           <div className="max-w-4xl mx-auto flex gap-4 items-center bg-gray-50 border border-gray-200 p-2 rounded-2xl focus-within:border-teal-500 transition-all">
+        <div className="p-4 md:p-8 bg-white z-10 border-t border-gray-100">
+           <div className="max-w-4xl mx-auto flex gap-4 items-center bg-gray-50 border-2 border-gray-200 p-2 rounded-2xl focus-within:border-teal-500 transition-all shadow-inner">
               <input 
                  type="text" 
-                 placeholder="Gõ điều bạn muốn chia sẻ..."
-                 className="flex-1 bg-transparent border-none focus:ring-0 font-bold px-4 py-2"
+                 placeholder="Chia sẻ điều bạn muốn cùng chuyên gia tâm lý AI..."
+                 className="flex-1 bg-transparent border-none focus:ring-0 font-bold px-4 py-2 text-lg outline-none"
+                 value={input}
+                 onChange={(e) => setInput(e.target.value)}
+                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               />
-              <button className="bg-teal-500 text-white p-3 rounded-xl hover:scale-105 active:scale-95 transition-all">
-                <Send size={20} />
+              <button 
+                onClick={handleSend}
+                disabled={!input.trim() || loading}
+                className="bg-teal-500 text-white p-4 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-comic-hover disabled:opacity-50"
+              >
+                <Send size={22} />
               </button>
            </div>
         </div>

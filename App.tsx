@@ -24,6 +24,7 @@ import StudyHubWriting from './components/StudyHubWriting';
 import StudyHubSummary from './components/StudyHubSummary';
 import BrainCandyScreen from './components/BrainCandyScreen';
 import ComprehensiveReportScreen from './components/ComprehensiveReportScreen';
+import LearningPassportReflection from './components/LearningPassportReflection';
 import AdminDashboard from './components/AdminDashboard';
 import { ScreenState, StudentResult } from './types';
 
@@ -45,6 +46,7 @@ const App: React.FC = () => {
   const handleGoToSOSResources = () => setScreen('sos_resources');
   const handleGoToStudyHub = () => setScreen('studyhub');
   const handleGoToBrainCandy = () => setScreen('braincandy');
+  const handleGoToReflection = () => setScreen('passport_reflection');
 
   const handleSelectMBTI = () => setScreen('intro_mbti');
   const handleStartMBTIQuiz = () => setScreen('quiz_mbti');
@@ -105,10 +107,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-paper font-sans text-gray-800">
       {screen === 'welcome' && (
-        <WelcomeScreen 
-          onStart={handleStart} 
-          onAdmin={() => setScreen('admin')} 
-        />
+        <WelcomeScreen onStart={handleStart} onAdmin={() => setScreen('admin')} />
       )}
 
       {screen === 'home' && (
@@ -120,163 +119,41 @@ const App: React.FC = () => {
           onSelectSOS={handleGoToSOS}
           onSelectStudyHub={handleGoToStudyHub}
           onSelectBrainCandy={handleGoToBrainCandy}
+          onSelectPassport={handleGoToReflection}
           onLogout={handleFullReset}
         />
       )}
 
-      {screen === 'studyhub' && (
-        <StudyHubScreen 
-          onBack={handleBackToHome}
-          onSelectTool={handleSelectStudyTool}
+      {screen === 'passport_reflection' && (
+        <LearningPassportReflection 
+          studentName={currentUser.name} 
+          onBack={handleBackToHome} 
         />
       )}
 
+      {screen === 'studyhub' && <StudyHubScreen onBack={handleBackToHome} onSelectTool={handleSelectStudyTool} />}
       {screen === 'studyhub_flashcards' && <StudyHubFlashcards onBack={handleGoToStudyHub} />}
       {screen === 'studyhub_speaking' && <StudyHubSpeaking onBack={handleGoToStudyHub} />}
       {screen === 'studyhub_writing' && <StudyHubWriting onBack={handleGoToStudyHub} />}
       {screen === 'studyhub_summary' && <StudyHubSummary onBack={handleGoToStudyHub} />}
-
-      {screen === 'braincandy' && (
-        <BrainCandyScreen 
-          studentName={currentUser.name}
-          studentId={currentUser.id}
-          onBack={handleBackToHome}
-        />
-      )}
-
-      {screen === 'sos_mood' && (
-        <SOSMoodScreen 
-          onBack={handleBackToHome}
-          onGoToResources={handleGoToSOSResources}
-        />
-      )}
-
-      {screen === 'sos_resources' && (
-        <SOSResourcesScreen 
-          onBack={() => setScreen('sos_mood')}
-        />
-      )}
-
-      {screen === 'menu' && (
-        <MenuScreen 
-          studentName={currentUser.name}
-          onSelectMBTI={handleSelectMBTI}
-          onSelectHolland={handleSelectHolland}
-          onSelectIQ={handleSelectIQ}
-          onSelectEQ={handleSelectEQ}
-          onSelectDISC={handleSelectDISC}
-          onSelectChill={handleGoToChill}
-          onSelectReport={handleSelectReport}
-          onBack={handleBackToHome}
-        />
-      )}
-
-      {screen === 'intro_mbti' && (
-        <MBTIIntroScreen 
-          onStart={handleStartMBTIQuiz}
-          onBack={handleBackToMenu}
-        />
-      )}
-      
-      {screen === 'quiz_mbti' && (
-        <QuizScreen 
-          studentName={currentUser.name}
-          studentId={currentUser.id}
-          onComplete={handleCompleteMBTI}
-          onCancel={handleBackToMenu}
-        />
-      )}
-
-      {screen === 'passport_mbti' && result && (
-        <PassportScreen 
-          result={result} 
-          onRetake={handleBackToMenu} 
-        />
-      )}
-
-      {screen === 'quiz_holland' && (
-        <HollandQuizScreen
-            studentName={currentUser.name}
-            studentId={currentUser.id}
-            onComplete={handleCompleteHolland}
-            onCancel={handleBackToMenu}
-        />
-      )}
-
-      {screen === 'passport_holland' && result && (
-          <HollandPassportScreen
-            result={result}
-            onRetake={handleBackToMenu}
-          />
-      )}
-
-      {screen === 'quiz_iq' && (
-        <IQQuizScreen
-            studentName={currentUser.name}
-            studentId={currentUser.id}
-            onComplete={handleCompleteIQ}
-            onCancel={handleBackToMenu}
-        />
-      )}
-
-      {screen === 'passport_iq' && result && (
-          <IQPassportScreen
-            result={result}
-            onRetake={handleBackToMenu}
-          />
-      )}
-
-      {screen === 'quiz_eq' && (
-        <EQQuizScreen
-            studentName={currentUser.name}
-            studentId={currentUser.id}
-            onComplete={handleCompleteEQ}
-            onCancel={handleBackToMenu}
-        />
-      )}
-
-      {screen === 'passport_eq' && result && (
-          <EQPassportScreen
-            result={result}
-            onRetake={handleBackToMenu}
-          />
-      )}
-
-      {screen === 'quiz_disc' && (
-        <DISCQuizScreen
-            studentName={currentUser.name}
-            studentId={currentUser.id}
-            onComplete={handleCompleteDISC}
-            onCancel={handleBackToMenu}
-        />
-      )}
-
-      {screen === 'passport_disc' && result && (
-          <DISCPassportScreen
-            result={result}
-            onRetake={handleBackToMenu}
-          />
-      )}
-
-      {screen === 'chillzone' && (
-        <ChillZoneScreen 
-            onBack={handleBackToHome}
-        />
-      )}
-
-      {screen === 'comprehensive_report' && (
-          <ComprehensiveReportScreen
-            studentName={currentUser.name}
-            studentId={currentUser.id}
-            onBack={handleBackToMenu}
-          />
-      )}
-
-      {screen === 'admin' && (
-        <AdminDashboard 
-          onBack={handleFullReset} 
-        />
-      )}
+      {screen === 'braincandy' && <BrainCandyScreen studentName={currentUser.name} studentId={currentUser.id} onBack={handleBackToHome} />}
+      {screen === 'sos_mood' && <SOSMoodScreen onBack={handleBackToHome} onGoToResources={handleGoToSOSResources} />}
+      {screen === 'sos_resources' && <SOSResourcesScreen onBack={() => setScreen('sos_mood')} />}
+      {screen === 'menu' && <MenuScreen studentName={currentUser.name} onSelectMBTI={handleSelectMBTI} onSelectHolland={handleSelectHolland} onSelectIQ={handleSelectIQ} onSelectEQ={handleSelectEQ} onSelectDISC={handleSelectDISC} onSelectChill={handleGoToChill} onSelectReport={handleSelectReport} onBack={handleBackToHome} />}
+      {screen === 'intro_mbti' && <MBTIIntroScreen onStart={handleStartMBTIQuiz} onBack={handleBackToMenu} />}
+      {screen === 'quiz_mbti' && <QuizScreen studentName={currentUser.name} studentId={currentUser.id} onComplete={handleCompleteMBTI} onCancel={handleBackToMenu} />}
+      {screen === 'passport_mbti' && result && <PassportScreen result={result} onRetake={handleBackToMenu} />}
+      {screen === 'quiz_holland' && <HollandQuizScreen studentName={currentUser.name} studentId={currentUser.id} onComplete={handleCompleteHolland} onCancel={handleBackToMenu} />}
+      {screen === 'passport_holland' && result && <HollandPassportScreen result={result} onRetake={handleBackToMenu} />}
+      {screen === 'quiz_iq' && <IQQuizScreen studentName={currentUser.name} studentId={currentUser.id} onComplete={handleCompleteIQ} onCancel={handleBackToMenu} />}
+      {screen === 'passport_iq' && result && <IQPassportScreen result={result} onRetake={handleBackToMenu} />}
+      {screen === 'quiz_eq' && <EQQuizScreen studentName={currentUser.name} studentId={currentUser.id} onComplete={handleCompleteEQ} onCancel={handleBackToMenu} />}
+      {screen === 'passport_eq' && result && <EQPassportScreen result={result} onRetake={handleBackToMenu} />}
+      {screen === 'quiz_disc' && <DISCQuizScreen studentName={currentUser.name} studentId={currentUser.id} onComplete={handleCompleteDISC} onCancel={handleBackToMenu} />}
+      {screen === 'passport_disc' && result && <DISCPassportScreen result={result} onRetake={handleBackToMenu} />}
+      {screen === 'chillzone' && <ChillZoneScreen onBack={handleBackToHome} />}
+      {screen === 'comprehensive_report' && <ComprehensiveReportScreen studentName={currentUser.name} studentId={currentUser.id} onBack={handleBackToMenu} />}
+      {screen === 'admin' && <AdminDashboard onBack={handleFullReset} />}
     </div>
   );
 };

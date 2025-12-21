@@ -8,6 +8,7 @@ import {
   CheckCircle2, MessageSquare, PenTool, LayoutGrid
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { recordInteraction } from '../services/storageService';
 
 interface Props {
   onBack: () => void;
@@ -15,12 +16,14 @@ interface Props {
 
 type ChillState = 'setup' | 'activity' | 'story' | 'reflection' | 'finish';
 type Mood = 'Bình thường' | 'Lo lắng' | 'Mệt mỏi' | 'Chán học';
+type Period = 'Sáng' | 'Chiều' | 'Tối';
 
 const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
   const [step, setStep] = useState<ChillState>('setup');
   const [mood, setMood] = useState<Mood>('Bình thường');
   const [studyTime, setStudyTime] = useState(60);
   const [loading, setLoading] = useState(false);
+  const [period, setPeriod] = useState<Period>('Sáng');
   
   // AI Generated Content
   const [aiActivity, setAiActivity] = useState<{
@@ -33,24 +36,25 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
   const [motivationQuote, setMotivationQuote] = useState('');
   const [story, setStory] = useState('');
   const [reflectionAnswers, setReflectionAnswers] = useState({ q1: '', q2: '', q3: '' });
+  const [startTime] = useState(Date.now());
 
-  // Get current period
-  const getPeriod = () => {
+  // Set default period based on local time
+  useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Sáng';
-    if (hour < 18) return 'Chiều';
-    return 'Tối';
-  };
+    if (hour >= 5 && hour < 12) setPeriod('Sáng');
+    else if (hour >= 12 && hour < 18) setPeriod('Chiều');
+    else setPeriod('Tối');
+  }, []);
 
   const generateRelaxation = async () => {
     setLoading(true);
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
       const prompt = `Bạn là ChillZone – AI hỗ trợ cảm xúc tích cực cho học sinh THPT Việt Nam.
-      Học sinh đang: ${mood}, đã học ${studyTime} phút, thời điểm: ${getPeriod()}.
+      Học sinh đang: ${mood}, đã học ${studyTime} phút, thời điểm người học chọn: ${period}.
       
       Hãy thực hiện:
-      1. Đề xuất MỘT hoạt động thư giãn (2-5p).
+      1. Đề xuất MỘT hoạt động thư giãn (2-5p) phù hợp với buổi ${period}.
       2. Hướng dẫn hoạt động đó (ngôn ngữ đơn giản).
       3. Một thông điệp tích cực nhẹ nhàng.
       4. Gợi ý quay lại học tập tự nhiên.
@@ -116,6 +120,19 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
     fetchQuote();
   }, []);
 
+  const finishChill = () => {
+    const duration = Math.floor((Date.now() - startTime) / 1000);
+    recordInteraction({
+      timestamp: Date.now(),
+      module: 'ChillZone',
+      activityType: 'Thư giãn',
+      duration,
+      status: 'Hoàn thành',
+      state: 'Tích cực'
+    });
+    setStep('finish');
+  };
+
   return (
     <div className="min-h-screen bg-[#FFFDF5] font-hand p-4 md:p-8 flex flex-col items-center overflow-x-hidden relative">
       {/* Abstract Background Decor */}
@@ -131,8 +148,8 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
                 <Coffee size={32} className="text-white" />
              </div>
              <div>
-                <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-none">Chill Zone AI</h1>
-                <p className="text-slate-500 font-bold text-sm italic">Trạm sạc năng lượng tinh thần</p>
+                <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-none uppercase italic">Chill Zone AI</h1>
+                <p className="text-slate-500 font-bold text-sm">Trạm sạc năng lượng tinh thần</p>
              </div>
           </div>
           <button onClick={onBack} className="bg-white border-2 border-black p-3 rounded-2xl hover:translate-y-1 transition-all shadow-comic-hover active:scale-95">
@@ -142,23 +159,23 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
 
         <AnimatePresence mode="wait">
           {step === 'setup' && (
-            <motion.div key="setup" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
+            <motion.div key="setup" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8 pb-10">
               {/* Daily Quote Card */}
-              <div className="bg-amber-100 border-4 border-black p-8 rounded-[3rem] shadow-comic relative overflow-hidden text-center group">
+              <div className="bg-amber-100 border-4 border-black p-10 rounded-[3rem] shadow-comic relative overflow-hidden text-center group">
                  <Quote className="absolute top-4 left-6 text-amber-300 opacity-50" size={40} />
-                 <h2 className="text-2xl font-black text-slate-800 italic leading-relaxed">
+                 <h2 className="text-2xl md:text-3xl font-black text-slate-800 italic leading-relaxed">
                    "{motivationQuote || 'Đang tải cảm hứng...'}"
                  </h2>
-                 <div className="mt-4 flex justify-center gap-2">
-                    <span className="bg-white border-2 border-black px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest">Motivation of the Day</span>
+                 <div className="mt-6 flex justify-center gap-2">
+                    <span className="bg-white border-2 border-black px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm">Motivation of the Day</span>
                  </div>
               </div>
 
               {/* Mood Selection */}
-              <div className="bg-white border-4 border-black rounded-[3rem] p-8 md:p-10 shadow-comic space-y-8">
+              <div className="bg-white border-4 border-black rounded-[3rem] p-8 md:p-12 shadow-comic space-y-10">
                  <div className="text-center">
-                    <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Em đang cảm thấy thế nào?</h3>
-                    <p className="text-slate-400 font-bold">Hãy chia sẻ để ChillZone giúp em nhé!</p>
+                    <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none italic">Em đang cảm thấy thế nào?</h3>
+                    <p className="text-slate-400 font-bold mt-2">Hãy chia sẻ để ChillZone giúp em nhé!</p>
                  </div>
 
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -166,15 +183,15 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
                       <button 
                         key={m}
                         onClick={() => setMood(m)}
-                        className={`p-6 rounded-[2rem] border-4 transition-all flex flex-col items-center gap-3 shadow-comic hover:shadow-none
+                        className={`p-8 rounded-[2.5rem] border-4 transition-all flex flex-col items-center gap-3 shadow-comic hover:shadow-none
                           ${mood === m ? 'bg-rose-400 border-black text-white scale-95' : 'bg-white border-slate-200 text-slate-400 hover:border-black'}
                         `}
                       >
-                         {m === 'Bình thường' && <Smile size={32} />}
-                         {m === 'Lo lắng' && <Wind size={32} />}
-                         {m === 'Mệt mỏi' && <Coffee size={32} />}
-                         {m === 'Chán học' && <Sparkles size={32} />}
-                         <span className="font-black text-sm uppercase">{m}</span>
+                         {m === 'Bình thường' && <Smile size={40} />}
+                         {m === 'Lo lắng' && <Wind size={40} />}
+                         {m === 'Mệt mỏi' && <Coffee size={40} />}
+                         {m === 'Chán học' && <Sparkles size={40} />}
+                         <span className="font-black text-base uppercase">{m}</span>
                       </button>
                     ))}
                  </div>
@@ -182,39 +199,53 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
                  <div className="space-y-4">
                     <div className="flex justify-between items-end px-2">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thời gian học liên tục (phút)</label>
-                       <span className="text-2xl font-black text-rose-500">{studyTime}p</span>
+                       <span className="text-3xl font-black text-rose-500">{studyTime}p</span>
                     </div>
                     <input 
                       type="range" min="15" max="180" step="15" 
                       value={studyTime} onChange={(e) => setStudyTime(parseInt(e.target.value))}
-                      className="w-full h-3 bg-slate-100 rounded-full appearance-none cursor-pointer accent-rose-400 border-2 border-black"
+                      className="w-full h-4 bg-slate-100 rounded-full appearance-none cursor-pointer accent-rose-400 border-2 border-black"
                     />
                  </div>
 
-                 <div className="flex gap-4">
-                    <div className="flex-1 bg-blue-50 border-4 border-black p-4 rounded-2xl flex items-center gap-4">
-                       <div className="bg-white p-2 rounded-xl border-2 border-black">
-                          {getPeriod() === 'Sáng' && <Sun className="text-yellow-500" />}
-                          {getPeriod() === 'Chiều' && <Sunset className="text-orange-500" />}
-                          {getPeriod() === 'Tối' && <Moon className="text-indigo-500" />}
-                       </div>
-                       <div>
-                          <p className="text-[10px] font-black text-slate-400 uppercase">Thời điểm</p>
-                          <p className="font-black text-slate-800">Buổi {getPeriod()}</p>
+                 <div className="flex flex-col md:flex-row gap-6">
+                    {/* Period Selector - Improved edition */}
+                    <div className="flex-1 bg-blue-50 border-4 border-black p-4 rounded-[2.5rem] flex flex-col gap-3 shadow-comic-hover">
+                       <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest px-2 flex items-center gap-2">
+                         <Timer size={12}/> THỜI ĐIỂM
+                       </p>
+                       <div className="flex gap-2">
+                          {(['Sáng', 'Chiều', 'Tối'] as Period[]).map((p) => (
+                             <button 
+                                key={p} 
+                                onClick={() => setPeriod(p)}
+                                className={`flex-1 flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all group/p
+                                  ${period === p ? 'bg-white border-black text-blue-600 scale-95 shadow-inner' : 'bg-white/50 border-transparent text-slate-300 hover:border-blue-200'}
+                                `}
+                             >
+                                <div className="mb-1 transition-transform group-hover/p:rotate-12">
+                                  {p === 'Sáng' && <Sun size={20} />}
+                                  {p === 'Chiều' && <Sunset size={20} />}
+                                  {p === 'Tối' && <Moon size={20} />}
+                                </div>
+                                <span className="text-[10px] font-black uppercase">{p}</span>
+                             </button>
+                          ))}
                        </div>
                     </div>
+                    
                     <button 
                       onClick={generateRelaxation}
                       disabled={loading}
-                      className="flex-[2] bg-black text-white py-5 rounded-[2rem] font-black text-2xl shadow-comic hover:shadow-none transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                      className="flex-[2] bg-black text-white py-6 rounded-[2.5rem] font-black text-3xl shadow-comic hover:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-50 active:scale-95"
                     >
-                      {loading ? <RefreshCw className="animate-spin" /> : <Sparkles />} NHẬN TRỊ LIỆU NHANH
+                      {loading ? <RefreshCw className="animate-spin" /> : <Sparkles size={32} />} NHẬN TRỊ LIỆU NHANH
                     </button>
                  </div>
               </div>
 
               {/* Story Corner Selector */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
                  <StoryEntry 
                     title="Câu chuyện nỗ lực" 
                     color="bg-emerald-100" 
@@ -239,13 +270,13 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
                         <Heart size={40} className="text-rose-500" fill="currentColor" />
                      </div>
                      <div>
-                        <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">{aiActivity.activity}</h2>
+                        <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase italic">{aiActivity.activity}</h2>
                         <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-2">Dành riêng cho em ngay lúc này</p>
                      </div>
 
                      <div className="bg-slate-50 border-4 border-dashed border-slate-200 p-8 rounded-[2.5rem] w-full text-left">
                         <h4 className="text-sm font-black text-rose-500 uppercase mb-4 flex items-center gap-2">
-                           <Zap size={16} /> Hướng dẫn thực hiện
+                           <Zap size={16} /> Hướng dẫn thực hành
                         </h4>
                         <p className="text-xl font-bold text-slate-700 leading-relaxed whitespace-pre-line">
                            {aiActivity.guide}
@@ -281,9 +312,9 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
                   <div className="absolute -top-6 -left-6 bg-emerald-400 p-4 rounded-2xl border-4 border-black shadow-comic rotate-[-10deg]">
                      <BookOpen className="text-white" size={32} />
                   </div>
-                  <h2 className="text-3xl font-black text-slate-900 mb-8 uppercase tracking-tighter text-center">Góc chữa lành</h2>
+                  <h2 className="text-3xl font-black text-slate-900 mb-8 uppercase tracking-tighter text-center italic">Góc chữa lành</h2>
                   <div className="prose prose-slate max-w-none">
-                     <p className="text-xl font-bold text-slate-700 leading-relaxed italic whitespace-pre-line">
+                     <p className="text-xl font-bold text-slate-700 leading-relaxed italic whitespace-pre-line font-sans">
                         {story}
                      </p>
                   </div>
@@ -303,7 +334,7 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
             <motion.div key="reflection" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
                <div className="bg-white border-4 border-black rounded-[3rem] p-10 shadow-comic space-y-10">
                   <div className="text-center">
-                     <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Phút giây lắng đọng</h2>
+                     <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none italic">Phút giây lắng đọng</h2>
                      <p className="text-slate-400 font-bold mt-2 italic">Dành 1 phút để cảm nhận bản thân em nhé...</p>
                   </div>
 
@@ -311,22 +342,22 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
                      <ReflectionInput 
                         label="Hôm nay em đã cố gắng điều gì?" 
                         value={reflectionAnswers.q1} 
-                        onChange={(v) => setReflectionAnswers({...reflectionAnswers, q1: v})} 
+                        onChange={(v: string) => setReflectionAnswers({...reflectionAnswers, q1: v})} 
                      />
                      <ReflectionInput 
                         label="Điều gì khiến em cảm thấy dễ chịu hơn lúc này?" 
                         value={reflectionAnswers.q2} 
-                        onChange={(v) => setReflectionAnswers({...reflectionAnswers, q2: v})} 
+                        onChange={(v: string) => setReflectionAnswers({...reflectionAnswers, q2: v})} 
                      />
                      <ReflectionInput 
                         label="Ngày mai em muốn làm tốt hơn điều gì?" 
                         value={reflectionAnswers.q3} 
-                        onChange={(v) => setReflectionAnswers({...reflectionAnswers, q3: v})} 
+                        onChange={(v: string) => setReflectionAnswers({...reflectionAnswers, q3: v})} 
                      />
                   </div>
 
                   <button 
-                     onClick={() => setStep('finish')}
+                     onClick={finishChill}
                      className="w-full bg-rose-400 text-white py-6 rounded-[2.5rem] border-4 border-black font-black text-2xl shadow-comic hover:shadow-none transition-all"
                   >
                      HOÀN THÀNH CHILLZONE
@@ -343,8 +374,8 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
                </div>
 
                <div className="space-y-4">
-                  <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Em tuyệt vời lắm!</h2>
-                  <p className="text-2xl font-bold text-slate-500 max-w-lg leading-relaxed">
+                  <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none italic">Em tuyệt vời lắm!</h2>
+                  <p className="text-2xl font-bold text-slate-500 max-w-lg leading-relaxed font-sans">
                      ChillZone ghi nhận nỗ lực chăm sóc bản thân của em. 
                      Giờ là lúc để quay lại chinh phục kiến thức với một tinh thần rạng rỡ nhất!
                   </p>
@@ -356,13 +387,16 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
                   <button 
-                    onClick={onBack} // Returns to Home, from where student can pick BrainCandy/StudyHub
+                    onClick={onBack}
                     className="bg-black text-white py-5 rounded-[2rem] font-black text-2xl shadow-comic hover:shadow-none transition-all flex items-center justify-center gap-3"
                   >
                     <LayoutGrid size={24} /> VỀ TRANG CHỦ
                   </button>
                   <button 
-                    onClick={() => setStep('setup')}
+                    onClick={() => {
+                        setStep('setup');
+                        fetchQuote();
+                    }}
                     className="bg-white border-4 border-black py-5 rounded-[2rem] font-black text-2xl shadow-comic hover:shadow-none transition-all flex items-center justify-center gap-3"
                   >
                     <RefreshCw size={24} /> THỨ GIÃN THÊM
@@ -380,21 +414,21 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
 const StoryEntry = ({ title, color, onClick }: any) => (
   <button 
     onClick={onClick}
-    className={`${color} border-4 border-black p-6 rounded-[2.5rem] flex items-center justify-between shadow-comic hover:translate-y-1 hover:shadow-none transition-all group`}
+    className={`${color} border-4 border-black p-8 rounded-[2.5rem] flex items-center justify-between shadow-comic hover:translate-y-1 hover:shadow-none transition-all group`}
   >
-     <div className="flex items-center gap-4">
-        <div className="bg-white p-3 rounded-xl border-2 border-black group-hover:rotate-6 transition-transform">
-           <PenTool size={24} className="text-slate-800" />
+     <div className="flex items-center gap-6">
+        <div className="bg-white p-4 rounded-2xl border-2 border-black group-hover:rotate-6 transition-transform shadow-sm">
+           <PenTool size={32} className="text-slate-800" />
         </div>
-        <span className="font-black text-xl text-slate-800 uppercase tracking-tighter">{title}</span>
+        <span className="font-black text-2xl text-slate-800 uppercase tracking-tighter italic">{title}</span>
      </div>
-     <ChevronRight className="text-slate-400" />
+     <ChevronRight className="text-slate-400" size={32} />
   </button>
 );
 
 const ReflectionInput = ({ label, value, onChange }: any) => (
   <div className="space-y-3">
-     <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-4 flex items-center gap-2">
+     <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-4 flex items-center gap-2 font-sans">
         <MessageSquare size={14} className="text-rose-400" /> {label}
      </label>
      <input 
@@ -402,7 +436,7 @@ const ReflectionInput = ({ label, value, onChange }: any) => (
         placeholder="..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-slate-50 border-4 border-black rounded-2xl p-4 font-bold text-lg focus:bg-white transition-all outline-none"
+        className="w-full bg-slate-50 border-4 border-black rounded-2xl p-5 font-bold text-xl focus:bg-white transition-all outline-none font-sans"
      />
   </div>
 );

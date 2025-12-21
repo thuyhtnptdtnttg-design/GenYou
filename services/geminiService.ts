@@ -1,81 +1,89 @@
-import { GoogleGenAI } from "@google/genai";
-import { StudentResult } from "../types";
 
-// Note: API key is obtained exclusively from process.env.API_KEY
+import { GoogleGenAI } from "@google/genai";
+import { StudentResult, InteractionRecord, PassportReflection } from "../types";
 
 export const getStudyAdvice = async (mbtiType: string, studentName: string): Promise<string> => {
-  // Always use { apiKey: process.env.API_KEY } for initialization.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
   try {
-    // Using gemini-3-flash-preview for simple text tasks.
     const modelId = 'gemini-3-flash-preview';
     const prompt = `
-      Bạn là GenYou-bot, một trợ lý học tập vui vẻ, thân thiện cho học sinh cấp 3 (THPT).
-      Học sinh tên là "${studentName}" vừa làm bài test MBTI và có kết quả là "${mbtiType}".
-      
-      Hãy đưa ra 3 lời khuyên học tập ngắn gọn, thiết thực và vui vẻ phù hợp với tính cách ${mbtiType}.
-      Mỗi lời khuyên chỉ khoảng 1-2 câu.
-      Sử dụng emoji phù hợp.
-      Format output dưới dạng text thuần, dùng gạch đầu dòng (-).
+      Bạn là GenYou-bot, một trợ lý học tập vui vẻ cho học sinh cấp 3.
+      Học sinh "${studentName}" có MBTI là "${mbtiType}".
+      Đưa ra 3 lời khuyên học tập ngắn gọn, thiết thực. Sử dụng emoji. Format text thuần, gạch đầu dòng (-).
     `;
-
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: prompt,
-    });
-
-    // Directly access the .text property.
-    return response.text || "Bot đang nghỉ ngơi xíu, bạn thử lại sau nhé!";
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "Hiện tại Bot không thể kết nối. Hãy thử lại sau nha!";
-  }
+    const response = await ai.models.generateContent({ model: modelId, contents: prompt });
+    return response.text || "Bot đang nghỉ ngơi xíu!";
+  } catch (error) { return "Hiện tại Bot không thể kết nối."; }
 };
 
-export const getComprehensiveAnalysis = async (
-  name: string,
-  results: Record<string, StudentResult | null>
-): Promise<string> => {
-  // Create a new instance for each call as per guidelines.
+export const getComprehensiveAnalysis = async (name: string, results: Record<string, StudentResult | null>): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
   try {
-    // Construct the context based on available results
     let context = `Học sinh tên: ${name}.\nĐã hoàn thành các bài test sau:\n`;
+    if (results.MBTI) context += `- MBTI: ${results.MBTI.mbtiType}\n`;
+    if (results.HOLLAND) context += `- Holland: ${results.HOLLAND.hollandCode}\n`;
+    if (results.IQ) context += `- IQ: ${results.IQ.iqClassification}\n`;
+    if (results.EQ) context += `- EQ: ${results.EQ.eqClassification}\n`;
+    if (results.DISC) context += `- DISC: Nhóm ${results.DISC.discType}\n`;
 
-    if (results.MBTI) context += `- MBTI: ${results.MBTI.mbtiType} (Tính cách)\n`;
-    if (results.HOLLAND) context += `- Holland Code: ${results.HOLLAND.hollandCode} (Sở thích nghề nghiệp)\n`;
-    if (results.IQ) context += `- IQ: ${results.IQ.iqClassification} (${results.IQ.iqScore}/14)\n`;
-    if (results.EQ) context += `- EQ: ${results.EQ.eqClassification} (${results.EQ.eqScore}/70)\n`;
-    if (results.DISC) context += `- DISC: Nhóm ${results.DISC.discType} (Hành vi)\n`;
+    const prompt = `Bạn là chuyên gia tư vấn hướng nghiệp GenYou. Hãy phân tích tổng hợp hồ sơ của học sinh này. Format Markdown. Ghi nhận nỗ lực.`;
+    const response = await ai.models.generateContent({ model: 'gemini-3-pro-preview', contents: prompt });
+    return response.text || "Không thể tạo phân tích.";
+  } catch (e) { return "Lỗi kết nối AI."; }
+};
 
-    const prompt = `
-      Bạn là chuyên gia tư vấn hướng nghiệp và tâm lý học đường cao cấp GenYou.
-      Hãy phân tích tổng hợp hồ sơ của học sinh dưới đây để đưa ra lộ trình phát triển tốt nhất.
-      
-      Dữ liệu học sinh:
-      ${context}
-
-      Yêu cầu đầu ra (Format Markdown, giọng văn thân thiện, khích lệ, sâu sắc):
-      1. **Bức tranh tổng quan**: Mô tả ngắn gọn về con người học sinh dựa trên sự kết hợp các chỉ số (Ví dụ: MBTI kết hợp Holland nói lên điều gì? IQ và EQ bổ trợ nhau thế nào?).
-      2. **Điểm mạnh "Vàng"**: 3 điểm mạnh nhất khi kết hợp các yếu tố này lại.
-      3. **Định hướng nghề nghiệp tối ưu**: Gợi ý 3 ngành nghề/lĩnh vực cụ thể phù hợp nhất với TẤT CẢ các chỉ số trên. Giải thích tại sao.
-      4. **Lời khuyên "xương máu"**: Một điều chỉnh nhỏ trong thói quen hoặc tư duy sẽ giúp bạn ấy thành công vượt bậc (dựa trên điểm yếu tiềm ẩn của các nhóm tính cách này).
-      
-      Nếu thiếu bài test nào, hãy đưa ra lời khuyên dựa trên những gì đã có, nhưng nhắc nhẹ học sinh nên làm thêm bài còn thiếu để chính xác hơn.
-    `;
-
-    // Using gemini-3-pro-preview for complex reasoning tasks.
+export const getSOSMoodResponse = async (userMsg: string, history: any[]): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const contents = history.map(m => ({ role: m.role === 'model' ? 'model' : 'user', parts: [{ text: m.text }] }));
+    contents.push({ role: 'user', parts: [{ text: userMsg }] });
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
+      contents: contents,
+      config: { systemInstruction: "Bạn là SOS Mood, lắng nghe thấu hiểu học sinh." }
+    });
+    return response.text || "Mình đang lắng nghe...";
+  } catch (error) { return "Hệ thống đang bận."; }
+};
+
+export const analyzePassportJourney = async (name: string, interactions: InteractionRecord[]): Promise<PassportReflection> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const historyText = interactions.map(i => `${new Date(i.timestamp).toLocaleDateString()}: ${i.module} - ${i.activityType} (${i.duration}s, ${i.state})`).join('\n');
+    
+    const prompt = `Bạn là Learning Passport AI. Hãy phân tích hành trình của học sinh ${name}.
+    Dữ liệu tương tác:
+    ${historyText}
+
+    Nhiệm vụ:
+    1. Tính chuỗi ngày học tập (streak).
+    2. Đánh giá sự đa dạng hoạt động.
+    3. Đánh giá mức độ cân bằng (Học vs Thư giãn).
+    4. Trao 1 danh hiệu khích lệ: {Người học bền bỉ, Nhà thám hiểm tri thức, Người biết lắng nghe bản thân, Học tập có cân bằng, Tinh thần tự học tích cực}.
+    5. Viết lời nhắn động viên (không áp lực).
+
+    Trả về JSON:
+    {
+      "learningStreak": number,
+      "habitConsistency": "Ổn định" | "Đang phát triển",
+      "balanceScore": number (0-100),
+      "awardedTitle": { "name": "string", "description": "Ý nghĩa giáo dục", "reason": "Tại sao được trao" },
+      "timelineHighlights": ["string - 3 điểm sáng"],
+      "aiEncouragement": "string"
+    }`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
       contents: prompt,
+      config: { responseMimeType: "application/json" }
     });
 
-    // Directly access the .text property.
-    return response.text || "Không thể tạo phân tích lúc này.";
+    return JSON.parse(response.text);
   } catch (e) {
-    console.error(e);
-    return "Lỗi kết nối AI.";
+    return {
+      learningStreak: 1, habitConsistency: "Đang phát triển", balanceScore: 50,
+      awardedTitle: { name: "Người bạn của tri thức", description: "Dành cho người bắt đầu hành trình", reason: "Bạn đã tham gia hệ thống" },
+      timelineHighlights: ["Bắt đầu hành trình"], aiEncouragement: "Mọi hành trình vạn dặm đều bắt đầu từ một bước chân."
+    };
   }
 };
