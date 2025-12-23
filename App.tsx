@@ -29,8 +29,14 @@ import AdminDashboard from './components/AdminDashboard';
 import { ScreenState, StudentResult } from './types';
 
 const App: React.FC = () => {
-  const [screen, setScreen] = useState<ScreenState>('welcome');
-  const [currentUser, setCurrentUser] = useState<{name: string, id: string, grade: string}>({ name: '', id: '', grade: '' });
+  // Thay đổi screen khởi tạo từ 'welcome' sang 'home'
+  const [screen, setScreen] = useState<ScreenState>('home');
+  // Thiết lập thông tin người dùng mặc định vì không còn đăng nhập
+  const [currentUser, setCurrentUser] = useState<{name: string, id: string, grade: string}>({ 
+    name: 'Bạn Học', 
+    id: 'GEN-GUEST-001', 
+    grade: 'THPT' 
+  });
   const [result, setResult] = useState<StudentResult | null>(null);
 
   const handleStart = (name: string, studentId: string) => {
@@ -92,9 +98,10 @@ const App: React.FC = () => {
   };
   
   const handleFullReset = () => {
-      setScreen('welcome');
+      // Thay vì về welcome, về home với dữ liệu mặc định
+      setScreen('home');
       setResult(null);
-      setCurrentUser({ name: '', id: '', grade: '' });
+      setCurrentUser({ name: 'Bạn Học', id: 'GEN-GUEST-001', grade: 'THPT' });
   };
 
   const handleSelectStudyTool = (tool: string) => {
@@ -120,7 +127,7 @@ const App: React.FC = () => {
           onSelectStudyHub={handleGoToStudyHub}
           onSelectBrainCandy={handleGoToBrainCandy}
           onSelectPassport={handleGoToReflection}
-          onLogout={handleFullReset}
+          onLogout={() => setScreen('admin')} // Chuyển nút logout thành nút quản trị cho giáo viên
         />
       )}
 
@@ -153,7 +160,7 @@ const App: React.FC = () => {
       {screen === 'passport_disc' && result && <DISCPassportScreen result={result} onRetake={handleBackToMenu} />}
       {screen === 'chillzone' && <ChillZoneScreen onBack={handleBackToHome} />}
       {screen === 'comprehensive_report' && <ComprehensiveReportScreen studentName={currentUser.name} studentId={currentUser.id} onBack={handleBackToMenu} />}
-      {screen === 'admin' && <AdminDashboard onBack={handleFullReset} />}
+      {screen === 'admin' && <AdminDashboard onBack={handleBackToHome} />}
     </div>
   );
 };

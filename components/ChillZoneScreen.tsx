@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+// Added Sparkles to the imports to fix "Cannot find name 'Sparkles'" errors
 import { 
-  ArrowLeft, Heart, Zap, Sparkles, BookOpen, 
+  ArrowLeft, Heart, Zap, BookOpen, 
   Wind, Smile, Coffee, Brain, ChevronRight, 
   RefreshCw, Quote, Sun, Sunset, Moon, Timer,
-  CheckCircle2, MessageSquare, PenTool, LayoutGrid
+  CheckCircle2, MessageSquare, PenTool, LayoutGrid,
+  Play, Pause, Maximize, Volume2, X, PlayCircle, Film, Sparkles
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { recordInteraction } from '../services/storageService';
@@ -18,12 +20,57 @@ type ChillState = 'setup' | 'activity' | 'story' | 'reflection' | 'finish';
 type Mood = 'Bình thường' | 'Lo lắng' | 'Mệt mỏi' | 'Chán học';
 type Period = 'Sáng' | 'Chiều' | 'Tối';
 
+interface RelaxationVideo {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  thumbnail: string;
+  color: string;
+}
+
+const RELAXATION_VIDEOS: RelaxationVideo[] = [
+  {
+    id: 'vid-1',
+    title: 'Mưa Ban Đêm',
+    description: 'Tiếng mưa rơi trên cửa kính giúp dễ ngủ và tập trung.',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-rain-falling-on-a-window-pane-at-night-2521-large.mp4',
+    thumbnail: 'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?q=80&w=400&auto=format&fit=crop',
+    color: 'bg-indigo-100'
+  },
+  {
+    id: 'vid-2',
+    title: 'Sóng Biển Hoàng Hôn',
+    description: 'Thả mình vào nhịp vỗ của đại dương và ánh nắng ấm áp.',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-waves-coming-to-the-beach-shore-at-sunset-2646-large.mp4',
+    thumbnail: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=400&auto=format&fit=crop',
+    color: 'bg-orange-100'
+  },
+  {
+    id: 'vid-3',
+    title: 'Rừng Xanh Tĩnh Lặng',
+    description: 'Tiếng chim hót và gió luồn qua tán cây đại ngàn.',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-pathway-in-the-middle-of-a-forest-with-tall-trees-2495-large.mp4',
+    thumbnail: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=400&auto=format&fit=crop',
+    color: 'bg-emerald-100'
+  },
+  {
+    id: 'vid-4',
+    title: 'Bầu Trời Đầy Sao',
+    description: 'Khám phá sự bao la của vũ trụ để làm dịu tâm trí.',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-starry-night-sky-background-998-large.mp4',
+    thumbnail: 'https://images.unsplash.com/photo-1506318137071-a8e063b4b519?q=80&w=400&auto=format&fit=crop',
+    color: 'bg-purple-100'
+  }
+];
+
 const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
   const [step, setStep] = useState<ChillState>('setup');
   const [mood, setMood] = useState<Mood>('Bình thường');
   const [studyTime, setStudyTime] = useState(60);
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState<Period>('Sáng');
+  const [activeVideo, setActiveVideo] = useState<RelaxationVideo | null>(null);
   
   // AI Generated Content
   const [aiActivity, setAiActivity] = useState<{
@@ -244,6 +291,43 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
                  </div>
               </div>
 
+              {/* Relaxation Videos Section */}
+              <div className="space-y-6">
+                 <div className="flex items-center gap-3 px-2">
+                    <Film size={24} className="text-purple-500" />
+                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Video Thư Giãn</h3>
+                    <span className="bg-purple-100 text-purple-600 px-3 py-0.5 rounded-full text-[10px] font-black border border-purple-200 uppercase tracking-widest">Mới</span>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {RELAXATION_VIDEOS.map((vid) => (
+                      <motion.button 
+                        key={vid.id}
+                        whileHover={{ y: -5 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setActiveVideo(vid)}
+                        className={`group relative ${vid.color} border-4 border-black rounded-[2.5rem] p-5 shadow-comic hover:shadow-none transition-all text-left flex flex-col gap-4 overflow-hidden`}
+                      >
+                         <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-black">
+                            <img src={vid.thumbnail} alt={vid.title} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                               <div className="bg-white p-4 rounded-full border-2 border-black shadow-comic">
+                                  <Play fill="black" size={24} />
+                               </div>
+                            </div>
+                         </div>
+                         <div>
+                            <h4 className="text-xl font-black text-slate-900 leading-tight mb-1">{vid.title}</h4>
+                            <p className="text-xs font-bold text-slate-500 leading-relaxed italic">{vid.description}</p>
+                         </div>
+                         {/* Abstract Decor */}
+                         <div className="absolute right-[-10px] bottom-[-10px] opacity-10 rotate-[-15deg] group-hover:rotate-0 transition-transform pointer-events-none">
+                            <PlayCircle size={80} />
+                         </div>
+                      </motion.button>
+                    ))}
+                 </div>
+              </div>
+
               {/* Story Corner Selector */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
                  <StoryEntry 
@@ -405,8 +489,62 @@ const ChillZoneScreen: React.FC<Props> = ({ onBack }) => {
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
+
+      {/* Video Player Modal */}
+      <AnimatePresence>
+         {activeVideo && (
+            <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-10"
+            >
+               <motion.div 
+                  initial={{ scale: 0.9, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.9, y: 20 }}
+                  className="bg-white border-4 border-black rounded-[3rem] shadow-2xl w-full max-w-5xl overflow-hidden relative flex flex-col"
+               >
+                  <div className="p-4 md:p-6 border-b-4 border-black flex justify-between items-center bg-purple-50">
+                     <div className="flex items-center gap-3">
+                        <Play size={20} className="text-purple-600" />
+                        <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight italic">{activeVideo.title}</h3>
+                     </div>
+                     <button 
+                        onClick={() => setActiveVideo(null)}
+                        className="bg-white border-2 border-black p-2 rounded-xl hover:bg-red-50 transition-colors shadow-comic-hover"
+                     >
+                        <X size={20} />
+                     </button>
+                  </div>
+                  
+                  <div className="flex-1 bg-black relative aspect-video flex items-center justify-center group/video">
+                     <video 
+                        src={activeVideo.url} 
+                        className="w-full h-full max-h-[70vh]" 
+                        controls 
+                        autoPlay 
+                        loop
+                        playsInline
+                     />
+                  </div>
+
+                  <div className="p-6 md:p-8 bg-white space-y-2">
+                     <p className="text-lg md:text-xl font-bold text-slate-700 italic">"{activeVideo.description}"</p>
+                     <div className="flex items-center gap-4 pt-4 border-t-2 border-dashed border-slate-100">
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                           <Volume2 size={14} /> TIẾNG ĐỘNG CHỮA LÀNH
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                           <Maximize size={14} /> FULLSCREEN SUPPORTED
+                        </div>
+                     </div>
+                  </div>
+               </motion.div>
+            </motion.div>
+         )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -6,7 +6,7 @@ import {
   Heart, Zap, LayoutGrid, Coffee, Bell,
   ChevronRight, Trash2, Quote, Search,
   Compass, Lightbulb, Repeat, Mic2, BookOpenCheck,
-  Pin, UserCircle
+  Pin, UserCircle, Smile
 } from 'lucide-react';
 import GenYouBot from './GenYouBot';
 
@@ -27,9 +27,9 @@ interface LearningJourneyTask { id: string; method: string; task: string; color:
 
 const LEARNING_JOURNEY_SUGGESTIONS: LearningJourneyTask[] = [
   { id: 'suggest-1', method: 'Pomodoro', task: 'Học 25p - Nghỉ 5p (4 chu kỳ)', color: 'bg-rose-100', icon: <Coffee size={18} className="text-rose-600" />, desc: 'Tăng cường sự tập trung sâu, tránh mệt mỏi.' },
-  { id: 'suggest-2', method: 'Feynman', task: 'Tự giảng giải bài khó cho "đứa trẻ"', color: 'bg-amber-100', icon: <Mic2 size={18} className="text-amber-600" />, desc: 'Nếu bạn không thể giải thích đơn giản, bạn chưa hiểu nó.' },
-  { id: 'suggest-3', method: 'Active Recall', task: 'Tự kiểm tra 10 câu hỏi không nhìn sách', color: 'bg-emerald-100', icon: <BookOpenCheck size={18} className="text-emerald-600" />, desc: 'Ép não bộ truy xuất thông tin để nhớ lâu hơn.' },
-  { id: 'suggest-4', method: 'Spaced Repetition', task: 'Ôn tập lại Flashcards của 3 ngày trước', color: 'bg-blue-100', icon: <Repeat size={18} className="text-blue-600" />, desc: 'Chống lại đường cong lãng quên của não bộ.' }
+  { id: 'suggest-2', method: 'FEYNMAN', task: 'Tự giảng lại kiến thức vừa học', color: 'bg-amber-100', icon: <Mic2 size={18} className="text-amber-600" />, desc: 'Phương pháp giảng giải để hiểu sâu vấn đề.' },
+  { id: 'suggest-3', method: 'ACTIVE RECALL', task: 'Tự kiểm tra 10 câu hỏi không nhìn sách', color: 'bg-emerald-100', icon: <BookOpenCheck size={18} className="text-emerald-600" />, desc: 'Ép não bộ truy xuất thông tin để nhớ lâu hơn.' },
+  { id: 'suggest-4', method: 'SPACED REPETITION', task: 'Ôn lại kiến thức sau 1 ngày, 3 ngày, 7 ngày và 14 ngày', color: 'bg-blue-100', icon: <Repeat size={18} className="text-blue-600" />, desc: 'Chống lại đường cong lãng quên của não bộ.' }
 ];
 
 const HomeScreen: React.FC<Props> = ({ studentName, studentGrade, onSelectGenYou, onSelectChill, onSelectSOS, onSelectStudyHub, onSelectBrainCandy, onSelectPassport, onLogout }) => {
@@ -69,21 +69,12 @@ const HomeScreen: React.FC<Props> = ({ studentName, studentGrade, onSelectGenYou
         <header className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-4">
              <button onClick={onSelectPassport} className="w-12 h-12 rounded-xl border-4 border-black bg-black flex items-center justify-center shadow-comic-hover hover:scale-105 transition-all">
-                <UserCircle size={28} className="text-white" />
+                <Smile size={28} className="text-yellow-400" />
              </button>
              <div>
-                <h1 className="text-2xl md:text-3xl font-black text-ink leading-tight">Hi, <span className="text-purple-600">{studentName}!</span></h1>
-                <div className="flex items-center gap-2">
-                   <span className="bg-yellow-400 border-2 border-black px-2 py-0.5 rounded-lg font-black text-[10px] uppercase shadow-sm">
-                     LỚP {studentGrade || 'FG'}
-                   </span>
-                   <button onClick={onSelectPassport} className="flex items-center gap-1 text-orange-500 font-black text-xs hover:underline">
-                     <Star size={12} fill="currentColor" /> Hộ chiếu nỗ lực
-                   </button>
-                </div>
+                <h1 className="text-2xl md:text-3xl font-black text-ink leading-tight">Xin chào!</h1>
              </div>
           </div>
-          <button onClick={onLogout} className="px-4 py-1.5 border-2 border-gray-200 rounded-xl font-bold text-gray-400 hover:text-red-500 hover:border-red-200 transition-all text-xs">Đăng xuất</button>
         </header>
 
         <motion.div 
@@ -95,8 +86,9 @@ const HomeScreen: React.FC<Props> = ({ studentName, studentGrade, onSelectGenYou
             <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-600 rounded-full border-2 border-black"></div>
           </div>
           <div className="bg-white/30 p-2 rounded-full mb-2"><Quote className="text-yellow-700 opacity-40" size={24} /></div>
-          <h2 className="text-2xl md:text-3xl font-black text-ink max-w-3xl leading-tight">"Dream big, start small, but most of all, start."</h2>
-          <p className="text-gray-600 font-bold italic mt-2 text-lg">"Mơ lớn, bắt đầu nhỏ, nhưng quan trọng nhất là hãy bắt đầu."</p>
+          <h2 className="text-xl md:text-2xl font-black text-ink max-w-4xl leading-tight">
+            "Đừng đợi ai trao cho bạn tấm hộ chiếu để đi. Tấm hộ chiếu của bạn chính là sự chuẩn bị, kiến thức và lòng dũng cảm để tự mở ra thế giới."
+          </h2>
           <div className="absolute top-[-5px] right-14 text-red-600 rotate-[15deg] drop-shadow-md z-20"><Pin size={32} fill="currentColor" /></div>
         </motion.div>
 
