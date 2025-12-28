@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Book, Mic, PenTool, Brain, Sparkles } from 'lucide-react';
+import { ArrowLeft, Book, Mic, PenTool, Brain, Sparkles, GraduationCap } from 'lucide-react';
 
 interface Props {
   onBack: () => void;
-  onSelectTool: (tool: 'flashcards' | 'speaking' | 'writing' | 'summary') => void;
+  onSelectTool: (tool: 'flashcards' | 'speaking' | 'writing' | 'summary' | 'homework') => void;
 }
 
 const StudyHubScreen: React.FC<Props> = ({ onBack, onSelectTool }) => {
@@ -29,9 +29,21 @@ const StudyHubScreen: React.FC<Props> = ({ onBack, onSelectTool }) => {
       <div className="w-full max-w-4xl z-10">
         <header className="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-            <h1 className="text-5xl font-black text-slate-900 mb-1 tracking-tight">StudyHub</h1>
+            <motion.h1 
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="text-5xl font-black text-slate-900 mb-1 tracking-tight"
+            >
+              StudyHub
+            </motion.h1>
             <div className="flex items-center gap-2 text-slate-500 font-bold bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm w-fit">
-              Trợ lý học tập thông minh <Sparkles size={16} className="text-amber-500" />
+              Trợ lý học tập thông minh 
+              <motion.div
+                animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Sparkles size={16} className="text-amber-500" />
+              </motion.div>
             </div>
           </motion.div>
           <button 
@@ -44,12 +56,20 @@ const StudyHubScreen: React.FC<Props> = ({ onBack, onSelectTool }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
           <StudyToolCard 
+            onClick={() => onSelectTool('homework')}
+            title="Giải Bài Tập"
+            desc="Đăng ảnh bài tập khó, AI giải đáp và giải thích dễ hiểu."
+            icon={<GraduationCap size={28} className="text-orange-500" />}
+            iconBg="bg-orange-50"
+            index={0}
+          />
+          <StudyToolCard 
             onClick={() => onSelectTool('flashcards')}
             title="Học Từ Vựng"
             desc="Thẻ Flashcard phong cách Quizlet, lặp lại ngắt quãng."
             icon={<Book size={28} className="text-rose-500" />}
             iconBg="bg-rose-50"
-            index={0}
+            index={1}
           />
           <StudyToolCard 
             onClick={() => onSelectTool('writing')}
@@ -57,7 +77,7 @@ const StudyHubScreen: React.FC<Props> = ({ onBack, onSelectTool }) => {
             desc="Sửa lỗi ngữ pháp & từ vựng theo chuẩn thi cử."
             icon={<PenTool size={28} className="text-sky-500" />}
             iconBg="bg-sky-50"
-            index={1}
+            index={2}
           />
           <StudyToolCard 
             onClick={() => onSelectTool('speaking')}
@@ -65,7 +85,7 @@ const StudyHubScreen: React.FC<Props> = ({ onBack, onSelectTool }) => {
             desc="Giao tiếp trực tiếp để chuẩn hóa phát âm."
             icon={<Mic size={28} className="text-emerald-500" />}
             iconBg="bg-emerald-50"
-            index={2}
+            index={3}
           />
           <StudyToolCard 
             onClick={() => onSelectTool('summary')}
@@ -73,7 +93,7 @@ const StudyHubScreen: React.FC<Props> = ({ onBack, onSelectTool }) => {
             desc="Biến tài liệu dài thành sơ đồ tư duy cô đọng."
             icon={<Brain size={28} className="text-violet-500" />}
             iconBg="bg-violet-50"
-            index={3}
+            index={4}
           />
         </div>
       </div>
@@ -91,9 +111,13 @@ const StudyToolCard = ({ onClick, title, desc, icon, iconBg, index }: any) => (
     onClick={onClick}
     className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 md:p-8 shadow-comic transition-all text-left flex flex-col gap-4 group h-full relative overflow-hidden"
   >
-    <div className={`w-14 h-14 ${iconBg} rounded-xl flex items-center justify-center border-2 border-slate-900 shadow-sm group-hover:rotate-6 transition-transform`}>
+    <motion.div 
+      animate={{ y: [0, -4, 0] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: index * 0.2 }}
+      className={`w-14 h-14 ${iconBg} rounded-xl flex items-center justify-center border-2 border-slate-900 shadow-sm group-hover:rotate-6 transition-transform`}
+    >
       {icon}
-    </div>
+    </motion.div>
     <div>
       <h3 className="text-2xl font-black text-slate-900 mb-2 leading-tight">{title}</h3>
       <p className="text-slate-500 font-bold leading-snug text-lg">{desc}</p>

@@ -32,7 +32,13 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
 
       <div className="text-center mb-8 z-10 pt-10">
         <GenYouBot mood="happy" className="mx-auto mb-4 w-32 h-32" />
-        <h1 className="text-4xl md:text-5xl font-black text-ink mb-2">Chào {studentName}! 👋</h1>
+        <motion.h1 
+          animate={{ y: [0, -3, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="text-4xl md:text-5xl font-black text-ink mb-2"
+        >
+          Chào {studentName}! 👋
+        </motion.h1>
         <p className="text-xl md:text-2xl text-gray-600 font-bold">Bạn muốn thử thách gì hôm nay?</p>
       </div>
 
@@ -47,6 +53,7 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
           desc="Khám phá tính cách."
           count="20 câu"
           Icon={DoodleBrain}
+          index={0}
         />
 
         {/* Holland Option */}
@@ -59,6 +66,7 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
           desc="Định hướng nghề nghiệp."
           count="60 câu"
           Icon={DoodleBriefcase}
+          index={1}
         />
 
         {/* IQ Option */}
@@ -71,6 +79,7 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
           desc="Đo lường tư duy logic."
           count="14 câu"
           Icon={DoodleLightbulb}
+          index={2}
         />
 
         {/* EQ Option */}
@@ -83,6 +92,7 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
           desc="Trí tuệ cảm xúc."
           count="14 câu"
           Icon={DoodleHeart}
+          index={3}
         />
 
         {/* DISC Option */}
@@ -95,6 +105,7 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
           desc="Thấu hiểu phong cách hành vi."
           count="21 câu"
           Icon={DoodleTarget}
+          index={4}
         />
 
         {/* Comprehensive Report Button (Occupies 1 slot on grid) */}
@@ -105,7 +116,12 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
             className="w-full bg-black rounded-[2rem] p-2.5 shadow-comic hover:shadow-comic-hover transition-all flex group"
           >
             <div className="bg-gradient-to-r from-gray-900 to-gray-800 w-full rounded-[1.5rem] p-5 flex items-center justify-center gap-4 border-2 border-gray-700 relative overflow-hidden">
-                <Sparkles size={32} className="text-yellow-400 animate-pulse shrink-0" />
+                <motion.div
+                  animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Sparkles size={32} className="text-yellow-400 shrink-0" />
+                </motion.div>
                 <div className="text-left flex-1">
                   <h2 className="text-xl md:text-2xl font-black leading-none uppercase text-yellow-400 mb-1">Báo Cáo Tổng Hợp</h2>
                   <p className="text-xs text-gray-300 font-bold">Phân tích AI từ tất cả kết quả</p>
@@ -119,7 +135,7 @@ const MenuScreen: React.FC<Props> = ({ studentName, onSelectMBTI, onSelectHollan
   );
 };
 
-const MenuItem = ({ onClick, color, iconBg, hoverIconBg, title, desc, count, Icon }: any) => (
+const MenuItem = ({ onClick, color, iconBg, hoverIconBg, title, desc, count, Icon, index }: any) => (
   <motion.button
     whileHover={{ scale: 1.02 }}
     whileTap={{ scale: 0.98 }}
@@ -127,9 +143,13 @@ const MenuItem = ({ onClick, color, iconBg, hoverIconBg, title, desc, count, Ico
     className="w-full bg-black rounded-[2rem] p-2.5 shadow-comic hover:shadow-comic-hover transition-all flex group"
   >
     <div className={`${color} w-full h-full rounded-[1.5rem] p-5 md:p-6 flex items-center gap-5 md:gap-6 border-2 border-black`}>
-      <div className={`w-16 h-16 md:w-20 md:h-20 ${iconBg} rounded-full flex items-center justify-center border-[3px] md:border-4 border-black ${hoverIconBg} shrink-0`}>
+      <motion.div 
+        animate={{ y: [0, -4, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: index * 0.2 }}
+        className={`w-16 h-16 md:w-20 md:h-20 ${iconBg} rounded-full flex items-center justify-center border-[3px] md:border-4 border-black ${hoverIconBg} shrink-0`}
+      >
         <Icon size={32} className="text-black md:w-10 md:h-10" />
-      </div>
+      </motion.div>
       <div className="flex flex-col items-start gap-1 md:gap-2 text-left min-w-0 flex-1">
          <h2 className="text-2xl md:text-4xl font-black text-black leading-none uppercase truncate w-full">{title}</h2>
          <p className="text-sm md:text-lg font-bold text-gray-800 leading-tight">{desc}</p>

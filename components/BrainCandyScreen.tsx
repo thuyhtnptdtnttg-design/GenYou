@@ -111,7 +111,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
       Yêu cầu CHUYÊN SÂU:
       - Tạo đúng 3 câu hỏi trắc nghiệm (quiz).
       - Trong đó ít nhất 1 câu là tình huống thực tế (scenario-based) để học sinh vận dụng kiến thức.
-      - Các câu trả lời trong mảng "options" và giá trị "answer" phải khớp từng ký tự (không thừa dấu cách).
+      - QUAN TRỌNG: Các câu trả lời trong mảng "options" và giá trị "answer" phải là văn bản thuần túy, tuyệt đối không kết thúc bằng dấu chấm (.) hoặc bất kỳ dấu câu nào ở cuối.
       - GIÁ TRỊ "answer" PHẢI LÀ NỘI DUNG CHỮ CỦA ĐÁP ÁN ĐÚNG, KHÔNG PHẢI LÀ A, B, C, D.
       Trả về định dạng JSON:
       {
@@ -120,9 +120,9 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
         "part2_examples": [{"example": "Tình huống ví dụ", "solution": "Hướng dẫn ứng dụng"}],
         "flashcards": [{"front": "Khái niệm", "back": "Giải thích ngắn"}],
         "quiz": [
-           {"question": "Câu hỏi lý thuyết", "options": ["Option 1", "Option 2", "Option 3", "Option 4"], "answer": "Option đúng", "explanation": "Giải thích", "isSituational": false},
-           {"question": "Câu hỏi tình huống", "options": ["Option 1", "Option 2", "Option 3", "Option 4"], "answer": "Option đúng", "explanation": "Giải thích vì sao đúng", "isSituational": true},
-           {"question": "Câu hỏi kiểm tra sâu", "options": ["Option 1", "Option 2", "Option 3", "Option 4"], "answer": "Option đúng", "explanation": "Giải thích", "isSituational": false}
+           {"question": "Câu hỏi lý thuyết", "options": ["Lựa chọn 1", "Lựa chọn 2", "Lựa chọn 3", "Lựa chọn 4"], "answer": "Lựa chọn đúng", "explanation": "Giải thích", "isSituational": false},
+           {"question": "Câu hỏi tình huống", "options": ["Cách giải quyết 1", "Cách giải quyết 2", "Cách giải quyết 3", "Cách giải quyết 4"], "answer": "Cách giải quyết đúng", "explanation": "Giải thích vì sao đúng", "isSituational": true},
+           {"question": "Câu hỏi kiểm tra sâu", "options": ["Đáp án 1", "Đáp án 2", "Đáp án 3", "Đáp án 4"], "answer": "Đáp án đúng", "explanation": "Giải thích", "isSituational": false}
         ]
       }`;
       
@@ -145,9 +145,13 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
     }
   };
 
-  // Hàm chuẩn hóa chuỗi để so sánh chính xác (Bỏ dấu chấm cuối, khoảng trắng)
+  // Hàm chuẩn hóa chuỗi cực kỳ mạnh mẽ để so sánh chính xác nhất
   const normalizeString = (str: string) => {
-    return str.trim().replace(/\.$/, "").toLowerCase();
+    if (!str) return "";
+    return str.trim()
+              .toLowerCase()
+              .replace(/[.,!?;:]+$/, "") // Loại bỏ mọi dấu câu ở cuối chuỗi
+              .replace(/\s+/g, " ");     // Thu gọn mọi khoảng trắng thừa thành 1 dấu cách duy nhất
   };
 
   const handleQuizAnswer = (opt: string) => {
@@ -156,7 +160,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
     setSelectedAnswer(opt);
     const correctAns = currentLesson.quiz[quizIdx].answer;
     
-    // So sánh chuẩn hóa để tránh lỗi dấu chấm/khoảng trắng
+    // So sánh chuẩn hóa 2 phía
     const isCorrect = normalizeString(opt) === normalizeString(correctAns);
     
     if (isCorrect) {
@@ -224,11 +228,20 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
       <div className="w-full max-w-5xl z-10 space-y-6">
         <header className="flex flex-col md:flex-row justify-between items-center bg-white border-4 border-black p-6 rounded-3xl shadow-comic gap-4">
           <div className="flex items-center gap-4">
-             <div className="p-3 bg-pink-500 rounded-2xl border-2 border-black rotate-[-3deg] shadow-comic-hover"><Zap size={32} className="text-white" fill="white" /></div>
-             <div>
+             <motion.div 
+                animate={{ rotate: [-3, 3, -3], scale: [1, 1.1, 1] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="p-3 bg-pink-500 rounded-2xl border-2 border-black shadow-comic-hover"
+             >
+                <Zap size={32} className="text-white" fill="white" />
+             </motion.div>
+             <motion.div
+                animate={{ x: [0, 2, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+             >
                 <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-none tracking-tighter">BrainCandy</h1>
                 <p className="text-slate-500 font-bold text-sm md:text-lg italic uppercase tracking-widest">Kiến thức nền tảng • Kỹ năng tương lai</p>
-             </div>
+             </motion.div>
           </div>
           <button onClick={onBack} className="bg-white border-2 border-black p-3 rounded-2xl hover:translate-y-1 transition-all shadow-comic-hover active:scale-95"><ArrowLeft size={24} /></button>
         </header>
@@ -241,6 +254,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                 icon={<IdeaIcon size={48}/>}
                 color="bg-rose-100"
                 onClick={() => setMainCategory('life_skills')}
+                index={0}
               />
               <SelectionModeCard 
                 title="Kiến thức môn học" 
@@ -248,6 +262,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                 icon={<StudyIcon size={48}/>}
                 color="bg-blue-100"
                 onClick={() => setMainCategory('academic')}
+                index={1}
               />
           </motion.div>
         )}
@@ -283,9 +298,15 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-               {ACADEMIC_SUBJECTS.map(sub => (
+               {ACADEMIC_SUBJECTS.map((sub, idx) => (
                  <button key={sub.id} onClick={() => setSelectedSubject(sub.id)} className={`${sub.color} border-4 ${selectedSubject === sub.id ? 'border-pink-500 ring-4 ring-pink-100' : 'border-black'} rounded-[2.5rem] p-6 md:p-8 flex flex-col items-center gap-4 transition-all shadow-comic hover:shadow-none group`}>
-                    <div className="bg-white p-4 rounded-2xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform">{sub.icon}</div>
+                    <motion.div 
+                      animate={{ y: [0, -3, 0] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: idx * 0.1 }}
+                      className="bg-white p-4 rounded-2xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform"
+                    >
+                      {sub.icon}
+                    </motion.div>
                     <span className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tighter text-center">{sub.name}</span>
                  </button>
                ))}
@@ -319,9 +340,15 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
 
             {!selectedSubject ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {LIFE_SKILL_CATEGORIES.map(cat => (
+                {LIFE_SKILL_CATEGORIES.map((cat, idx) => (
                   <button key={cat.id} onClick={() => setSelectedSubject(cat.id)} className={`${cat.color} border-4 border-black p-6 rounded-[2.5rem] shadow-comic hover:shadow-none transition-all flex flex-col items-center gap-4 group text-center`}>
-                    <div className="bg-white p-5 rounded-3xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform">{cat.icon}</div>
+                    <motion.div 
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: idx * 0.2 }}
+                      className="bg-white p-5 rounded-3xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform"
+                    >
+                      {cat.icon}
+                    </motion.div>
                     <div>
                       <h4 className="text-2xl font-black text-slate-900 uppercase leading-none tracking-tight mb-1">{cat.name}</h4>
                       <p className="text-sm font-bold text-slate-400 italic leading-snug">{cat.subtitle}</p>
@@ -334,7 +361,13 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                  <div className="bg-white border-4 border-black p-8 rounded-[3rem] shadow-comic relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-3 bg-pink-500"></div>
                     <div className="flex items-center gap-4 mb-2">
-                       <div className="bg-pink-50 p-2 rounded-xl text-pink-500">{selectedLifeSkillCategory?.icon}</div>
+                       <motion.div 
+                        animate={{ rotate: [-5, 5, -5] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="bg-pink-50 p-2 rounded-xl text-pink-500"
+                       >
+                         {selectedLifeSkillCategory?.icon}
+                       </motion.div>
                        <h3 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">{selectedLifeSkillCategory?.name}</h3>
                     </div>
                     <p className="text-xl font-bold text-slate-400 italic mb-10">{selectedLifeSkillCategory?.subtitle}</p>
@@ -385,7 +418,13 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                     <h2 className="text-5xl font-black text-slate-900 uppercase tracking-tighter leading-tight">{currentLesson.title}</h2>
                     <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mt-2">{currentLesson.subject}</p>
                   </div>
-                  <div className="hidden md:block"><Brain size={56} className="text-slate-200" /></div>
+                  <motion.div 
+                    animate={{ y: [0, -5, 0], rotate: [0, 5, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    className="hidden md:block"
+                  >
+                    <Brain size={56} className="text-slate-200" />
+                  </motion.div>
                </div>
                <div className="space-y-12">
                   <section>
@@ -421,7 +460,13 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
              <div className="text-center"><h2 className="text-4xl font-black uppercase tracking-tighter mb-2">Thẻ ghi nhớ trọng tâm</h2><p className="text-slate-400 font-black tracking-widest uppercase text-xs">Thẻ {flashcardIdx + 1} / {currentLesson.flashcards.length}</p></div>
              <div className="w-full">
                 <div className="bg-white border-4 border-black rounded-[3.5rem] shadow-comic flex flex-col p-12 text-center min-h-[450px] justify-center relative overflow-hidden transition-all duration-300">
-                   <div className="absolute top-8 left-1/2 -translate-x-1/2"><div className="bg-pink-100 p-4 rounded-full border-2 border-black"><IdeaIcon size={40} className="text-pink-600" /></div></div>
+                   <motion.div 
+                     animate={{ y: [0, -5, 0] }}
+                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                     className="absolute top-8 left-1/2 -translate-x-1/2"
+                   >
+                     <div className="bg-pink-100 p-4 rounded-full border-2 border-black"><IdeaIcon size={40} className="text-pink-600" /></div>
+                   </motion.div>
                    <div className="space-y-10 mt-10">
                       <h3 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight uppercase italic">"{currentLesson.flashcards[flashcardIdx].front}"</h3>
                       <AnimatePresence mode="wait">
@@ -440,14 +485,14 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
         {step === 'quiz' && currentLesson && (
           <div className="flex flex-col items-center space-y-10 w-full max-w-3xl mx-auto pb-10">
              <header className="w-full flex justify-between items-center px-4">
-                <div className="flex items-center gap-4"><div className="bg-white border-4 border-black w-16 h-16 rounded-2xl flex items-center justify-center shadow-comic-hover"><HelpCircle className="text-pink-500" size={32} /></div><h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Câu hỏi {quizIdx + 1}/{currentLesson.quiz.length}</h2></div>
+                <div className="flex items-center gap-4"><motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3, repeat: Infinity }} className="bg-white border-4 border-black w-16 h-16 rounded-2xl flex items-center justify-center shadow-comic-hover"><HelpCircle className="text-pink-500" size={32} /></motion.div><h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Câu hỏi {quizIdx + 1}/{currentLesson.quiz.length}</h2></div>
                 <div className="bg-slate-100 px-8 py-3 rounded-full font-black text-slate-400 border-2 border-slate-200">Đúng: <span className="text-pink-500">{quizScore}</span></div>
              </header>
              
              <div className="w-full bg-white border-4 border-black rounded-[3.5rem] p-12 shadow-comic min-h-[220px] flex flex-col items-center justify-center text-center relative overflow-hidden">
                 {currentLesson.quiz[quizIdx].isSituational && (
                   <div className="absolute top-4 left-6 flex items-center gap-2 bg-amber-100 px-3 py-1 rounded-full border-2 border-amber-400">
-                    <Star size={14} className="text-amber-600" />
+                    <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}><Star size={14} className="text-amber-600" /></motion.div>
                     <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Tình huống ứng dụng</span>
                   </div>
                 )}
@@ -482,11 +527,11 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
                 <div className="md:col-span-1 space-y-6">
                    <div className="bg-white border-4 border-black p-10 rounded-[3rem] shadow-comic flex flex-col items-center gap-6 text-center relative overflow-hidden">
-                      <div className={`w-28 h-28 rounded-full border-4 border-black flex items-center justify-center text-5xl font-black ${quizScore >= (currentLesson?.quiz.length || 3) ? 'bg-emerald-400' : 'bg-yellow-400'}`}>{quizScore}/{currentLesson?.quiz.length || 3}</div>
+                      <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }} className={`w-28 h-28 rounded-full border-4 border-black flex items-center justify-center text-5xl font-black ${quizScore >= (currentLesson?.quiz.length || 3) ? 'bg-emerald-400' : 'bg-yellow-400'}`}>{quizScore}/{currentLesson?.quiz.length || 3}</motion.div>
                       <div><p className="font-black text-slate-900 uppercase text-lg">Độ thấu hiểu</p></div>
                    </div>
                    <div className="bg-white border-4 border-black p-8 rounded-[3rem] shadow-comic flex flex-col items-center gap-4"><label className="text-xs font-black text-slate-400 uppercase tracking-widest">Cảm nhận của bạn?</label><div className="flex gap-2 w-full">{['Thấp', 'Trung bình', 'Cao'].map(c => (<button key={c} onClick={() => setConfidence(c as any)} className={`flex-1 py-3 rounded-2xl border-2 font-black text-sm transition-all ${confidence === c ? 'bg-black text-white border-black shadow-md' : 'bg-slate-50 text-slate-300 border-slate-100 hover:border-black'}`}>{c}</button>))}</div></div>
-                   <div className="bg-amber-100 border-4 border-black p-8 rounded-[3rem] shadow-comic flex items-center gap-6"><div className="bg-white p-4 rounded-2xl border-2 border-black shadow-sm"><Timer size={32} className="text-amber-600" /></div><div><p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Thời lượng học</p><p className="text-2xl font-black text-slate-900 leading-none mt-1">{Math.floor((Date.now() - startTime) / 60000)} phút</p></div></div>
+                   <div className="bg-amber-100 border-4 border-black p-8 rounded-[3rem] shadow-comic flex items-center gap-6"><motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 3, repeat: Infinity }} className="bg-white p-4 rounded-2xl border-2 border-black shadow-sm"><Timer size={32} className="text-amber-600" /></motion.div><div><p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Thời lượng học</p><p className="text-2xl font-black text-slate-900 leading-none mt-1">{Math.floor((Date.now() - startTime) / 60000)} phút</p></div></div>
                 </div>
                 
                 <div className="md:col-span-2 bg-white border-4 border-black rounded-[4rem] p-10 md:p-14 shadow-comic relative overflow-hidden flex flex-col">
@@ -512,7 +557,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                    <div className="absolute top-0 right-0 bg-pink-500 text-white px-8 py-3 rounded-bl-[3rem] font-black text-sm border-l-4 border-b-4 border-black uppercase tracking-widest italic">Phân tích nỗ lực</div>
                    <div className="flex-1 space-y-8">
                       <div className="flex items-center gap-5 mb-4">
-                         <div className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center text-pink-500 border-2 border-black shadow-sm"><Smile size={32} /></div>
+                         <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center text-pink-500 border-2 border-black shadow-sm"><Smile size={32} /></motion.div>
                          <h3 className="text-3xl font-black text-slate-900 uppercase italic leading-none">Từ BrainCandy AI</h3>
                       </div>
                       <div className="prose prose-slate max-w-none">
@@ -532,16 +577,20 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
   );
 };
 
-const SelectionModeCard = ({ title, desc, icon, color, onClick }: any) => (
+const SelectionModeCard = ({ title, desc, icon, color, onClick, index }: any) => (
   <motion.button 
     whileHover={{ scale: 1.05, rotate: 1 }}
     whileTap={{ scale: 0.95 }}
     onClick={onClick}
     className={`${color} border-4 border-black p-12 rounded-[4rem] shadow-comic flex flex-col items-center gap-8 group`}
   >
-     <div className="bg-white p-8 rounded-full border-4 border-black shadow-comic-hover group-hover:rotate-12 transition-transform">
+     <motion.div 
+        animate={{ y: [0, -5, 0], rotate: [0, 5, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: index * 0.3 }}
+        className="bg-white p-8 rounded-full border-4 border-black shadow-comic-hover group-hover:rotate-12 transition-transform"
+     >
         {icon}
-     </div>
+     </motion.div>
      <div className="text-center">
         <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic mb-3 leading-none">{title}</h3>
         <p className="text-2xl font-bold text-slate-500 italic font-sans max-w-xs">{desc}</p>

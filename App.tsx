@@ -22,6 +22,7 @@ import StudyHubFlashcards from './components/StudyHubFlashcards';
 import StudyHubSpeaking from './components/StudyHubSpeaking';
 import StudyHubWriting from './components/StudyHubWriting';
 import StudyHubSummary from './components/StudyHubSummary';
+import StudyHubHomeworkSolver from './components/StudyHubHomeworkSolver';
 import BrainCandyScreen from './components/BrainCandyScreen';
 import ComprehensiveReportScreen from './components/ComprehensiveReportScreen';
 import LearningPassportReflection from './components/LearningPassportReflection';
@@ -109,6 +110,7 @@ const App: React.FC = () => {
     if (tool === 'speaking') setScreen('studyhub_speaking');
     if (tool === 'writing') setScreen('studyhub_writing');
     if (tool === 'summary') setScreen('studyhub_summary');
+    if (tool === 'homework') setScreen('studyhub_homework');
   };
 
   return (
@@ -143,6 +145,7 @@ const App: React.FC = () => {
       {screen === 'studyhub_speaking' && <StudyHubSpeaking onBack={handleGoToStudyHub} />}
       {screen === 'studyhub_writing' && <StudyHubWriting onBack={handleGoToStudyHub} />}
       {screen === 'studyhub_summary' && <StudyHubSummary onBack={handleGoToStudyHub} />}
+      {screen === 'studyhub_homework' && <StudyHubHomeworkSolver onBack={handleGoToStudyHub} />}
       {screen === 'braincandy' && <BrainCandyScreen studentName={currentUser.name} studentId={currentUser.id} onBack={handleBackToHome} />}
       {screen === 'sos_mood' && <SOSMoodScreen onBack={handleBackToHome} onGoToResources={handleGoToSOSResources} />}
       {screen === 'sos_resources' && <SOSResourcesScreen onBack={() => setScreen('sos_mood')} />}

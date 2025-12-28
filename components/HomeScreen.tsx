@@ -6,7 +6,7 @@ import {
   Heart, Zap, LayoutGrid, Coffee, Bell,
   ChevronRight, Trash2, Quote, Search,
   Compass, Lightbulb, Repeat, Mic2, BookOpenCheck,
-  Pin, UserCircle, Smile
+  Pin, UserCircle, Smile, GraduationCap
 } from 'lucide-react';
 import GenYouBot from './GenYouBot';
 
@@ -66,15 +66,56 @@ const HomeScreen: React.FC<Props> = ({ studentName, studentGrade, onSelectGenYou
 
       <div className="w-full max-w-6xl z-10 space-y-6">
         
-        <header className="flex justify-between items-center mb-2">
-          <div className="flex items-center gap-4">
-             <button onClick={onSelectPassport} className="w-12 h-12 rounded-xl border-4 border-black bg-black flex items-center justify-center shadow-comic-hover hover:scale-105 transition-all">
+        <header className="grid grid-cols-1 md:grid-cols-3 items-center mb-6 gap-6">
+          <div className="flex items-center gap-4 justify-center md:justify-start">
+             <motion.button 
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                onClick={onSelectPassport} 
+                className="w-12 h-12 rounded-xl border-4 border-black bg-black flex items-center justify-center shadow-comic-hover hover:scale-105 transition-all shrink-0"
+             >
                 <Smile size={28} className="text-yellow-400" />
-             </button>
-             <div>
-                <h1 className="text-2xl md:text-3xl font-black text-ink leading-tight">Xin chào!</h1>
-             </div>
+             </motion.button>
+             <motion.h1 
+                animate={{ x: [0, 2, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="text-2xl font-black text-ink truncate"
+             >
+               Xin chào!
+             </motion.h1>
           </div>
+          
+          <div className="flex justify-center order-first md:order-none">
+            <div className="relative group cursor-default">
+               <motion.div
+                 animate={{ y: [-2, 2, -2], rotate: [-12, -8, -12] }}
+                 transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                 className="absolute -top-7 -left-5 z-10 drop-shadow-md"
+               >
+                 <GraduationCap size={32} className="text-slate-900" />
+               </motion.div>
+               <h2 className="text-3xl md:text-5xl font-black tracking-tighter flex italic uppercase">
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.0 }} className="text-rose-500">H</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.1 }} className="text-amber-500">Ộ</motion.span>
+                 <span className="text-transparent mx-1 md:mx-2"> </span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.2 }} className="text-sky-500">C</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.3 }} className="text-violet-500">H</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.4 }} className="text-pink-500">I</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.5 }} className="text-orange-500">Ế</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.6 }} className="text-blue-500">U</motion.span>
+                 <span className="text-transparent mx-1 md:mx-2"> </span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.7 }} className="text-emerald-500">H</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.8 }} className="text-rose-500">Ọ</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.9 }} className="text-amber-500">C</motion.span>
+                 <span className="text-transparent mx-1 md:mx-2"> </span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 1.0 }} className="text-sky-500">T</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 1.1 }} className="text-violet-500">Ậ</motion.span>
+                 <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 1.2 }} className="text-pink-500">P</motion.span>
+               </h2>
+            </div>
+          </div>
+
+          <div className="hidden md:block"></div>
         </header>
 
         <motion.div 
@@ -135,7 +176,13 @@ const HomeScreen: React.FC<Props> = ({ studentName, studentGrade, onSelectGenYou
                    <motion.div key={item.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} className={`${item.color} border-4 border-black rounded-[2rem] p-5 shadow-comic flex flex-col gap-3 relative overflow-hidden group`}>
                       <div className="flex justify-between items-start z-10">
                          <div className="flex items-center gap-2">
-                            <div className="bg-white p-2 rounded-xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform">{item.icon}</div>
+                            <motion.div 
+                              animate={{ y: [0, -3, 0] }}
+                              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: idx * 0.2 }}
+                              className="bg-white p-2 rounded-xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform"
+                            >
+                              {item.icon}
+                            </motion.div>
                             <span className="font-black text-xs uppercase tracking-wider text-slate-700">{item.method}</span>
                          </div>
                          <button onClick={() => addSuggestedTask(`${item.method}: ${item.task}`)} className="bg-white border-2 border-black p-1.5 rounded-lg hover:bg-slate-50 transition-colors shadow-comic-hover active:scale-90"><Plus size={16} /></button>
@@ -144,7 +191,13 @@ const HomeScreen: React.FC<Props> = ({ studentName, studentGrade, onSelectGenYou
                          <h4 className="text-xl font-black text-slate-900 leading-tight mb-1">{item.task}</h4>
                          <p className="text-xs font-bold text-slate-500 leading-relaxed italic">{item.desc}</p>
                       </div>
-                      <div className="absolute right-[-10px] bottom-[-10px] opacity-10 group-hover:scale-110 transition-transform pointer-events-none"><Lightbulb size={80} /></div>
+                      <motion.div 
+                        animate={{ opacity: [0.1, 0.2, 0.1], scale: [1, 1.05, 1] }}
+                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute right-[-10px] bottom-[-10px] text-slate-400 pointer-events-none"
+                      >
+                        <Lightbulb size={80} />
+                      </motion.div>
                    </motion.div>
                  ))}
               </div>
@@ -161,10 +214,21 @@ const HomeScreen: React.FC<Props> = ({ studentName, studentGrade, onSelectGenYou
                 <DiscoveryCard onClick={onSelectStudyHub} title="StudyHub" color="bg-green-100" icon={<LayoutGrid size={18} />} delay={0.3} />
               </div>
             </section>
-            <motion.button whileHover={{ scale: 1.05, rotate: -1.5 }} whileTap={{ scale: 0.95 }} onClick={onSelectChill} className="w-full bg-[#B2EBF2] border-4 border-black rounded-[2.2rem] p-6 shadow-comic text-left relative overflow-hidden group h-32 flex flex-col justify-center">
+            <motion.button 
+              whileHover={{ scale: 1.05, rotate: -1.5 }} 
+              whileTap={{ scale: 0.95 }} 
+              onClick={onSelectChill} 
+              className="w-full bg-[#B2EBF2] border-4 border-black rounded-[2.2rem] p-6 shadow-comic text-left relative overflow-hidden group h-32 flex flex-col justify-center"
+            >
               <h3 className="text-2xl font-black text-cyan-900 leading-none">Chill Zone</h3>
               <p className="text-[10px] font-black text-cyan-700 uppercase tracking-[0.2em] mt-1">RELAX & RECHARGE</p>
-              <div className="absolute right-[-10px] bottom-[-10px] text-cyan-300 opacity-20 rotate-[-15deg] group-hover:rotate-0 transition-transform"><Coffee size={90} /></div>
+              <motion.div 
+                animate={{ rotate: [-15, -5, -15], scale: [1, 1.1, 1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute right-[-10px] bottom-[-10px] text-cyan-300 opacity-20 pointer-events-none"
+              >
+                <Coffee size={90} />
+              </motion.div>
             </motion.button>
           </div>
         </div>
@@ -174,8 +238,21 @@ const HomeScreen: React.FC<Props> = ({ studentName, studentGrade, onSelectGenYou
 };
 
 const DiscoveryCard = ({ onClick, title, color, icon, badge, delay }: any) => (
-  <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ scale: 1.05, rotate: 2, y: -10, boxShadow: "0px 10px 0px 0px rgba(0,0,0,1)" }} whileTap={{ scale: 0.95 }} onClick={onClick} className={`${color} border-4 border-black rounded-[2.2rem] p-5 shadow-comic hover:shadow-none transition-all text-left flex flex-col justify-between aspect-square relative overflow-hidden group`}>
-    <div className="bg-white p-3 rounded-2xl border-2 border-black w-fit text-ink shadow-sm group-hover:scale-110 transition-transform">{icon}</div>
+  <motion.button 
+    initial={{ opacity: 0, scale: 0.9 }} 
+    animate={{ opacity: 1, scale: 1 }} 
+    whileHover={{ scale: 1.05, rotate: 2, y: -10, boxShadow: "0px 10px 0px 0px rgba(0,0,0,1)" }} 
+    whileTap={{ scale: 0.95 }} 
+    onClick={onClick} 
+    className={`${color} border-4 border-black rounded-[2.2rem] p-5 shadow-comic hover:shadow-none transition-all text-left flex flex-col justify-between aspect-square relative overflow-hidden group`}
+  >
+    <motion.div 
+      animate={{ y: [0, -4, 0] }}
+      transition={{ duration: 2 + delay, repeat: Infinity, ease: "easeInOut" }}
+      className="bg-white p-3 rounded-2xl border-2 border-black w-fit text-ink shadow-sm group-hover:scale-110 transition-transform"
+    >
+      {icon}
+    </motion.div>
     <span className="text-xl font-black text-ink leading-tight">{title}</span>
     {badge && <div className="absolute top-2 right-2 bg-pink-300 border-2 border-black px-2 py-0.5 rounded-lg text-[7px] font-black rotate-[-8deg] shadow-sm animate-pulse">{badge}</div>}
   </motion.button>

@@ -93,7 +93,7 @@ export type ScreenState =
   | 'intro_mbti' | 'quiz_mbti' | 'quiz_holland' | 'quiz_iq' | 'quiz_eq' | 'quiz_disc' 
   | 'passport_mbti' | 'passport_holland' | 'passport_iq' | 'passport_eq' | 'passport_disc' 
   | 'admin' | 'comprehensive_report' | 'chillzone' | 'sos_mood' | 'sos_resources'
-  | 'studyhub' | 'studyhub_flashcards' | 'studyhub_speaking' | 'studyhub_writing' | 'studyhub_summary'
+  | 'studyhub' | 'studyhub_flashcards' | 'studyhub_speaking' | 'studyhub_writing' | 'studyhub_summary' | 'studyhub_homework'
   | 'braincandy' | 'passport_reflection';
 
 export interface MBTIProfile { type: string; name: string; description: string[]; color: string; icon: string; }
