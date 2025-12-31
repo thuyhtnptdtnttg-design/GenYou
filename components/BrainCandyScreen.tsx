@@ -108,22 +108,15 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
     try {
       const prompt = `Bạn là BrainCandy – Hệ thống học tập thông minh cho học sinh Việt Nam. 
       Hãy tạo bài học cô đọng cho ${categoryName}, Nhóm: ${subjectName}, Chủ đề: ${topicToUse}.
-      Yêu cầu CHUYÊN SÂU:
-      - Tạo đúng 3 câu hỏi trắc nghiệm (quiz).
-      - Trong đó ít nhất 1 câu là tình huống thực tế (scenario-based) để học sinh vận dụng kiến thức.
-      - QUAN TRỌNG: Các câu trả lời trong mảng "options" và giá trị "answer" phải là văn bản thuần túy, tuyệt đối không kết thúc bằng dấu chấm (.) hoặc bất kỳ dấu câu nào ở cuối.
-      - GIÁ TRỊ "answer" PHẢI LÀ NỘI DUNG CHỮ CỦA ĐÁP ÁN ĐÚNG, KHÔNG PHẢI LÀ A, B, C, D.
-      Trả về định dạng JSON:
+      Tạo đúng 3 câu hỏi trắc nghiệm (quiz), ít nhất 1 câu tình huống thực tế. 
+      Nội dung phải ngắn gọn, dễ hiểu.
+      Trả về định dạng JSON duy nhất:
       {
-        "title": "Tên bài học",
-        "part1_core": ["Ý chính 1", "Ý chính 2", "Ý chính 3", "Ý chính 4"],
-        "part2_examples": [{"example": "Tình huống ví dụ", "solution": "Hướng dẫn ứng dụng"}],
-        "flashcards": [{"front": "Khái niệm", "back": "Giải thích ngắn"}],
-        "quiz": [
-           {"question": "Câu hỏi lý thuyết", "options": ["Lựa chọn 1", "Lựa chọn 2", "Lựa chọn 3", "Lựa chọn 4"], "answer": "Lựa chọn đúng", "explanation": "Giải thích", "isSituational": false},
-           {"question": "Câu hỏi tình huống", "options": ["Cách giải quyết 1", "Cách giải quyết 2", "Cách giải quyết 3", "Cách giải quyết 4"], "answer": "Cách giải quyết đúng", "explanation": "Giải thích vì sao đúng", "isSituational": true},
-           {"question": "Câu hỏi kiểm tra sâu", "options": ["Đáp án 1", "Đáp án 2", "Đáp án 3", "Đáp án 4"], "answer": "Đáp án đúng", "explanation": "Giải thích", "isSituational": false}
-        ]
+        "title": "string",
+        "part1_core": ["string"],
+        "part2_examples": [{"example": "string", "solution": "string"}],
+        "flashcards": [{"front": "string", "back": "string"}],
+        "quiz": [{"question": "string", "options": ["string"], "answer": "string", "explanation": "string", "isSituational": boolean}]
       }`;
       
       const response = await ai.models.generateContent({ 
@@ -131,7 +124,9 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
         contents: prompt, 
         config: { responseMimeType: "application/json" } 
       });
-      const data = JSON.parse(response.text);
+      
+      const cleanJson = response.text.replace(/```json|```/g, "").trim();
+      const data = JSON.parse(cleanJson);
       setCurrentLesson({ ...data, subject: subjectName, grade, level });
       setStep('study_core');
       setStartTime(Date.now());
@@ -139,33 +134,26 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
       setShowCertifiedStamp(false);
     } catch (e) { 
       console.error(e);
-      alert("Lỗi kết nối AI. Vui lòng thử lại!"); 
+      alert("Lỗi kết nối AI hoặc dữ liệu trả về không đúng cấu trúc. Vui lòng thử lại!"); 
     } finally { 
       setLoading(false); 
     }
   };
 
-  // Hàm chuẩn hóa chuỗi cực kỳ mạnh mẽ để so sánh chính xác nhất
   const normalizeString = (str: string) => {
     if (!str) return "";
     return str.trim()
               .toLowerCase()
-              .replace(/[.,!?;:]+$/, "") // Loại bỏ mọi dấu câu ở cuối chuỗi
-              .replace(/\s+/g, " ");     // Thu gọn mọi khoảng trắng thừa thành 1 dấu cách duy nhất
+              .replace(/[.,!?;:]+$/, "") 
+              .replace(/\s+/g, " ");     
   };
 
   const handleQuizAnswer = (opt: string) => {
     if (selectedAnswer || !currentLesson) return;
-    
     setSelectedAnswer(opt);
     const correctAns = currentLesson.quiz[quizIdx].answer;
-    
-    // So sánh chuẩn hóa 2 phía
     const isCorrect = normalizeString(opt) === normalizeString(correctAns);
-    
-    if (isCorrect) {
-      setQuizScore(prev => prev + 1);
-    }
+    if (isCorrect) setQuizScore(prev => prev + 1);
     setShowExplanation(true);
   };
 
@@ -182,19 +170,13 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
         const finalScore = quizScore;
         const totalQuestions = currentLesson?.quiz.length || 3;
         
-        const prompt = `Bạn là BrainCandy AI. Hãy đưa ra nhận xét cá nhân hóa cho học sinh ${studentName}.
-        Bài học: ${currentLesson?.title}
-        Kết quả trắc nghiệm: ${finalScore}/${totalQuestions}
-        Thời gian học: ${durationMin} phút
-        Mức độ tự tin: ${confidence}
-        
-        Viết 2-3 câu khích lệ, nhận xét về sự tiến bộ và đưa ra lời khuyên học tập tiếp theo. Sử dụng emoji.`;
+        const prompt = `Nhận xét nỗ lực của học sinh ${studentName} vừa học bài ${currentLesson?.title}. Kết quả: ${finalScore}/${totalQuestions}. Mức độ tự tin: ${confidence}. Viết 2 câu khích lệ, dùng emoji.`;
         
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
           contents: prompt
         });
-        setPersonalFeedback(response.text || "Bạn đã hoàn thành rất tốt bài học hôm nay!");
+        setPersonalFeedback(response.text || "Bạn đã hoàn thành rất tốt bài học!");
         
         recordInteraction({
           timestamp: Date.now(),
@@ -207,10 +189,10 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
         
         setStep('personalization');
         if (finalScore === totalQuestions) {
-          setTimeout(() => setShowCertifiedStamp(true), 800);
+          setTimeout(() => setShowCertifiedStamp(true), 600);
         }
       } catch (e) {
-        setPersonalFeedback("Tuyệt vời! Bạn đã hoàn thành bài học và bài kiểm tra. Hãy tiếp tục phát huy nhé!");
+        setPersonalFeedback("Tuyệt vời! Bạn đã hoàn thành bài học. Hãy tiếp tục phát huy!");
         setStep('personalization');
       } finally {
         setLoading(false);
@@ -228,180 +210,62 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
       <div className="w-full max-w-5xl z-10 space-y-6">
         <header className="flex flex-col md:flex-row justify-between items-center bg-white border-4 border-black p-6 rounded-3xl shadow-comic gap-4">
           <div className="flex items-center gap-4">
-             <motion.div 
-                animate={{ rotate: [-3, 3, -3], scale: [1, 1.1, 1] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="p-3 bg-pink-500 rounded-2xl border-2 border-black shadow-comic-hover"
-             >
-                <Zap size={32} className="text-white" fill="white" />
-             </motion.div>
-             <motion.div
-                animate={{ x: [0, 2, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
-             >
-                <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-none tracking-tighter">BrainCandy</h1>
-                <p className="text-slate-500 font-bold text-sm md:text-lg italic uppercase tracking-widest">Kiến thức nền tảng • Kỹ năng tương lai</p>
-             </motion.div>
+             <motion.div animate={{ rotate: [-3, 3, -3], scale: [1, 1.1, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} className="p-3 bg-pink-500 rounded-2xl border-2 border-black shadow-comic-hover"><Zap size={32} className="text-white" fill="white" /></motion.div>
+             <motion.div animate={{ x: [0, 2, 0] }} transition={{ duration: 4, repeat: Infinity }}><h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-none tracking-tighter">BrainCandy</h1><p className="text-slate-500 font-bold text-sm md:text-lg italic uppercase tracking-widest">Kiến thức nền tảng • Kỹ năng tương lai</p></motion.div>
           </div>
-          <button onClick={onBack} className="bg-white border-2 border-black p-3 rounded-2xl hover:translate-y-1 transition-all shadow-comic-hover active:scale-95"><ArrowLeft size={24} /></button>
+          <button onClick={onBack} className="bg-white border-2 border-black p-3 rounded-2xl hover:translate-y-1 transition-all active:scale-95"><ArrowLeft size={24} /></button>
         </header>
 
         {step === 'setup' && mainCategory === 'selection' && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-10">
-              <SelectionModeCard 
-                title="Kỹ năng sống" 
-                desc="Cá nhân, tư duy, đạo đức & bảo vệ bản thân"
-                icon={<IdeaIcon size={48}/>}
-                color="bg-rose-100"
-                onClick={() => setMainCategory('life_skills')}
-                index={0}
-              />
-              <SelectionModeCard 
-                title="Kiến thức môn học" 
-                desc="Hệ thống kiến thức trọng tâm các môn THPT"
-                icon={<StudyIcon size={48}/>}
-                color="bg-blue-100"
-                onClick={() => setMainCategory('academic')}
-                index={1}
-              />
+              <SelectionModeCard title="Kỹ năng sống" desc="Cá nhân, tư duy, đạo đức & bảo vệ bản thân" icon={<IdeaIcon size={48}/>} color="bg-rose-100" onClick={() => setMainCategory('life_skills')} index={0} />
+              <SelectionModeCard title="Kiến thức môn học" desc="Hệ thống kiến thức trọng tâm các môn THPT" icon={<StudyIcon size={48}/>} color="bg-blue-100" onClick={() => setMainCategory('academic')} index={1} />
           </motion.div>
         )}
 
         {step === 'setup' && mainCategory === 'academic' && (
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-            <div className="flex items-center gap-4">
-               <button onClick={() => { setMainCategory('selection'); setSelectedSubject(''); }} className="p-2 bg-white border-2 border-black rounded-lg shadow-sm hover:bg-slate-50 transition-all"><ArrowLeft size={18}/></button>
-               <h3 className="text-3xl font-black text-slate-800 uppercase italic tracking-tighter">Học tập: Kiến thức môn học</h3>
-            </div>
-
+            <div className="flex items-center gap-4"><button onClick={() => { setMainCategory('selection'); setSelectedSubject(''); }} className="p-2 bg-white border-2 border-black rounded-lg shadow-sm hover:bg-slate-50 transition-all"><ArrowLeft size={18}/></button><h3 className="text-3xl font-black text-slate-800 uppercase italic tracking-tighter">Học tập: Kiến thức môn học</h3></div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="bg-white border-4 border-black rounded-[2.5rem] p-6 shadow-comic flex flex-col gap-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap size={14} /> Khối Lớp</label>
-                  <div className="flex bg-slate-100 p-1.5 rounded-2xl border-2 border-slate-200">
-                     {['10', '11', '12'].map(g => (
-                       <button key={g} onClick={() => setGrade(g)} className={`flex-1 py-2 rounded-xl font-black text-lg transition-all ${grade === g ? 'bg-black text-white shadow-md' : 'text-slate-400'}`}>{g}</button>
-                     ))}
-                  </div>
-               </div>
-               <div className="bg-white border-4 border-black rounded-[2.5rem] p-6 shadow-comic flex flex-col gap-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Zap size={14} /> Trình độ</label>
-                  <div className="flex bg-slate-100 p-1.5 rounded-2xl border-2 border-slate-200">
-                     {['Cơ bản', 'Trung bình', 'Khá'].map(l => (
-                       <button key={l} onClick={() => setLevel(l)} className={`flex-1 py-2 rounded-xl font-black text-sm md:text-base transition-all ${level === l ? 'bg-pink-500 text-white shadow-md' : 'text-slate-400'}`}>{l}</button>
-                     ))}
-                  </div>
-               </div>
-               <div className="bg-white border-4 border-black rounded-[2.5rem] p-6 shadow-comic flex flex-col gap-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Search size={14} /> Tìm chủ đề</label>
-                  <input type="text" placeholder="VD: Sóng dừng, Tích phân..." className="w-full bg-transparent border-b-2 border-slate-200 px-4 py-2 rounded-xl font-bold text-xl outline-none focus:border-black transition-all" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-               </div>
+               <div className="bg-white border-4 border-black rounded-[2.5rem] p-6 shadow-comic flex flex-col gap-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap size={14} /> Khối Lớp</label><div className="flex bg-slate-100 p-1.5 rounded-2xl border-2 border-slate-200">{['10', '11', '12'].map(g => (<button key={g} onClick={() => setGrade(g)} className={`flex-1 py-2 rounded-xl font-black text-lg transition-all ${grade === g ? 'bg-black text-white shadow-md' : 'text-slate-400'}`}>{g}</button>))}</div></div>
+               <div className="bg-white border-4 border-black rounded-[2.5rem] p-6 shadow-comic flex flex-col gap-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Zap size={14} /> Trình độ</label><div className="flex bg-slate-100 p-1.5 rounded-2xl border-2 border-slate-200">{['Cơ bản', 'Trung bình', 'Khá'].map(l => (<button key={l} onClick={() => setLevel(l)} className={`flex-1 py-2 rounded-xl font-black text-sm md:text-base transition-all ${level === l ? 'bg-pink-500 text-white shadow-md' : 'text-slate-400'}`}>{l}</button>))}</div></div>
+               <div className="bg-white border-4 border-black rounded-[2.5rem] p-6 shadow-comic flex flex-col gap-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Search size={14} /> Tìm chủ đề</label><input type="text" placeholder="VD: Sóng dừng, Tích phân..." className="w-full bg-transparent border-b-2 border-slate-200 px-4 py-2 rounded-xl font-bold text-xl outline-none focus:border-black transition-all" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div>
             </div>
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                {ACADEMIC_SUBJECTS.map((sub, idx) => (
-                 <button key={sub.id} onClick={() => setSelectedSubject(sub.id)} className={`${sub.color} border-4 ${selectedSubject === sub.id ? 'border-pink-500 ring-4 ring-pink-100' : 'border-black'} rounded-[2.5rem] p-6 md:p-8 flex flex-col items-center gap-4 transition-all shadow-comic hover:shadow-none group`}>
-                    <motion.div 
-                      animate={{ y: [0, -3, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: idx * 0.1 }}
-                      className="bg-white p-4 rounded-2xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform"
-                    >
-                      {sub.icon}
-                    </motion.div>
-                    <span className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tighter text-center">{sub.name}</span>
-                 </button>
+                 <button key={sub.id} onClick={() => setSelectedSubject(sub.id)} className={`${sub.color} border-4 ${selectedSubject === sub.id ? 'border-pink-500 ring-4 ring-pink-100' : 'border-black'} rounded-[2.5rem] p-6 md:p-8 flex flex-col items-center gap-4 transition-all shadow-comic hover:shadow-none group`}><motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: idx * 0.1 }} className="bg-white p-4 rounded-2xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform">{sub.icon}</motion.div><span className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tighter text-center">{sub.name}</span></button>
                ))}
             </div>
-
-            {currentAcademicTopics.length > 0 && selectedSubject && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white border-4 border-black rounded-[2.5rem] p-8 shadow-comic">
-                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                  <BookMarked size={16} className="text-pink-500" /> Chủ đề gợi ý môn {ACADEMIC_SUBJECTS.find(s=>s.id===selectedSubject)?.name}
-                </h3>
-                <div className="flex flex-wrap gap-3">
-                  {currentAcademicTopics.map((t, idx) => (
-                    <button key={idx} onClick={() => generateLessonAI(t)} className="px-6 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-slate-600 hover:border-black hover:text-black hover:bg-white transition-all text-lg">{t}</button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            <button onClick={() => generateLessonAI()} disabled={loading || !selectedSubject} className="w-full bg-black text-white py-6 rounded-[2.5rem] font-black text-3xl shadow-comic hover:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-30">
-              {loading ? <RefreshCw className="animate-spin" /> : <Sparkles />} {loading ? 'ĐANG CHUẨN BỊ...' : 'BẮT ĐẦU HỌC'}
-            </button>
+            <button onClick={() => generateLessonAI()} disabled={loading || !selectedSubject} className="w-full bg-black text-white py-6 rounded-[2.5rem] font-black text-3xl shadow-comic hover:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-30">{loading ? <RefreshCw className="animate-spin" /> : <Sparkles />} {loading ? 'ĐANG CHUẨN BỊ...' : 'BẮT ĐẦU HỌC'}</button>
           </motion.div>
         )}
 
         {step === 'setup' && mainCategory === 'life_skills' && (
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-            <div className="flex items-center gap-4">
-               <button onClick={() => { setMainCategory('selection'); setSelectedSubject(''); }} className="p-2 bg-white border-2 border-black rounded-lg shadow-sm hover:bg-slate-50 transition-all"><ArrowLeft size={18}/></button>
-               <h3 className="text-3xl font-black text-slate-800 uppercase italic tracking-tighter">Học tập: Kỹ năng sống</h3>
-            </div>
-
+            <div className="flex items-center gap-4"><button onClick={() => { setMainCategory('selection'); setSelectedSubject(''); }} className="p-2 bg-white border-2 border-black rounded-lg shadow-sm hover:bg-slate-50 transition-all"><ArrowLeft size={18}/></button><h3 className="text-3xl font-black text-slate-800 uppercase italic tracking-tighter">Học tập: Kỹ năng sống</h3></div>
             {!selectedSubject ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {LIFE_SKILL_CATEGORIES.map((cat, idx) => (
-                  <button key={cat.id} onClick={() => setSelectedSubject(cat.id)} className={`${cat.color} border-4 border-black p-6 rounded-[2.5rem] shadow-comic hover:shadow-none transition-all flex flex-col items-center gap-4 group text-center`}>
-                    <motion.div 
-                      animate={{ y: [0, -4, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: idx * 0.2 }}
-                      className="bg-white p-5 rounded-3xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform"
-                    >
-                      {cat.icon}
-                    </motion.div>
-                    <div>
-                      <h4 className="text-2xl font-black text-slate-900 uppercase leading-none tracking-tight mb-1">{cat.name}</h4>
-                      <p className="text-sm font-bold text-slate-400 italic leading-snug">{cat.subtitle}</p>
-                    </div>
-                  </button>
+                  <button key={cat.id} onClick={() => setSelectedSubject(cat.id)} className={`${cat.color} border-4 border-black p-6 rounded-[2.5rem] shadow-comic hover:shadow-none transition-all flex flex-col items-center gap-4 group text-center`}><motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: idx * 0.2 }} className="bg-white p-5 rounded-3xl border-2 border-black shadow-sm group-hover:rotate-6 transition-transform">{cat.icon}</motion.div><div><h4 className="text-2xl font-black text-slate-900 uppercase leading-none tracking-tight mb-1">{cat.name}</h4><p className="text-sm font-bold text-slate-400 italic leading-snug">{cat.subtitle}</p></div></button>
                 ))}
               </div>
             ) : (
               <div className="space-y-8">
                  <div className="bg-white border-4 border-black p-8 rounded-[3rem] shadow-comic relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-3 bg-pink-500"></div>
-                    <div className="flex items-center gap-4 mb-2">
-                       <motion.div 
-                        animate={{ rotate: [-5, 5, -5] }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                        className="bg-pink-50 p-2 rounded-xl text-pink-500"
-                       >
-                         {selectedLifeSkillCategory?.icon}
-                       </motion.div>
-                       <h3 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">{selectedLifeSkillCategory?.name}</h3>
-                    </div>
+                    <div className="flex items-center gap-4 mb-2"><motion.div animate={{ rotate: [-5, 5, -5] }} transition={{ duration: 3, repeat: Infinity }} className="bg-pink-50 p-2 rounded-xl text-pink-500">{selectedLifeSkillCategory?.icon}</motion.div><h3 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">{selectedLifeSkillCategory?.name}</h3></div>
                     <p className="text-xl font-bold text-slate-400 italic mb-10">{selectedLifeSkillCategory?.subtitle}</p>
-                    
                     <div className="space-y-12">
                        {lifeSkillGroups.map((group, idx) => (
                          <div key={idx} className="space-y-6">
-                            <h4 className="text-2xl font-black text-pink-600 uppercase flex items-center gap-2">
-                               <div className="w-1.5 h-6 bg-pink-500 rounded-full"></div> {group.title}
-                            </h4>
+                            <h4 className="text-2xl font-black text-pink-600 uppercase flex items-center gap-2"><div className="w-1.5 h-6 bg-pink-500 rounded-full"></div> {group.title}</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                {group.items.map((item, i) => (
-                                 <button 
-                                   key={i} 
-                                   onClick={() => generateLessonAI(item)}
-                                   className="group flex items-center justify-between bg-slate-50 border-4 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all text-left shadow-sm hover:shadow-comic active:scale-95"
-                                 >
-                                    <span className="text-2xl font-black tracking-tight leading-tight">{item}</span>
-                                    <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
-                                 </button>
+                                 <button key={i} onClick={() => generateLessonAI(item)} className="group flex items-center justify-between bg-slate-50 border-4 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all shadow-sm active:scale-95"><span className="text-2xl font-black tracking-tight leading-tight">{item}</span><ArrowRight size={24} /></button>
                                ))}
                             </div>
                          </div>
                        ))}
-                    </div>
-
-                    <div className="mt-12 pt-10 border-t-4 border-dashed border-slate-100 flex flex-col md:flex-row gap-4">
-                       <div className="flex-1 flex flex-col gap-2">
-                          <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-4">Gợi ý khác cho bạn?</label>
-                          <div className="flex gap-4">
-                             <input type="text" placeholder="Gõ yêu cầu cụ thể tại đây..." className="flex-1 bg-transparent border-b-2 border-slate-200 px-6 py-4 rounded-2xl font-bold text-2xl outline-none focus:border-black transition-all" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                             <button onClick={() => generateLessonAI()} className="bg-black text-white px-8 py-4 rounded-2xl font-black shadow-comic active:scale-95 transition-all"><Sparkles /></button>
-                          </div>
-                       </div>
                     </div>
                  </div>
               </div>
@@ -414,43 +278,14 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
             <div className="bg-white border-4 border-black rounded-[3rem] p-8 md:p-12 shadow-comic relative overflow-hidden">
                <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-rose-400 via-pink-400 to-amber-400"></div>
                <div className="mb-8 border-b-4 border-black pb-6 flex justify-between items-end">
-                  <div className="max-w-[80%]">
-                    <h2 className="text-5xl font-black text-slate-900 uppercase tracking-tighter leading-tight">{currentLesson.title}</h2>
-                    <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mt-2">{currentLesson.subject}</p>
-                  </div>
-                  <motion.div 
-                    animate={{ y: [0, -5, 0], rotate: [0, 5, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    className="hidden md:block"
-                  >
-                    <Brain size={56} className="text-slate-200" />
-                  </motion.div>
+                  <div className="max-w-[80%]"><h2 className="text-5xl font-black text-slate-900 uppercase tracking-tighter leading-tight">{currentLesson.title}</h2><p className="text-slate-400 font-bold uppercase tracking-widest text-sm mt-2">{currentLesson.subject}</p></div>
+                  <motion.div animate={{ y: [0, -5, 0], rotate: [0, 5, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="hidden md:block"><Brain size={56} className="text-slate-200" /></motion.div>
                </div>
                <div className="space-y-12">
-                  <section>
-                    <h3 className="text-3xl font-black text-pink-600 uppercase mb-6 flex items-center gap-3"><div className="w-2.5 h-10 bg-pink-500 rounded-full"></div> KIẾN THỨC CỐT LÕI</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       {currentLesson.part1_core.map((point, i) => (
-                         <div key={i} className="flex gap-4 items-start bg-slate-50 p-6 rounded-3xl border-2 border-slate-100 shadow-sm">
-                            <span className="bg-black text-white w-8 h-8 rounded-full border-2 border-black flex items-center justify-center text-sm font-black shrink-0">{i + 1}</span>
-                            <p className="text-2xl font-bold text-slate-700 leading-snug">{point}</p>
-                         </div>
-                       ))}
-                    </div>
-                  </section>
-                  <section>
-                    <h3 className="text-3xl font-black text-amber-600 uppercase mb-6 flex items-center gap-3"><div className="w-2.5 h-10 bg-amber-500 rounded-full"></div> MINH HỌA & ỨNG DỤNG</h3>
-                    <div className="space-y-6">
-                       {currentLesson.part2_examples.map((ex, i) => (
-                         <div key={i} className="bg-amber-50 border-4 border-dashed border-amber-200 p-8 rounded-[2.5rem] space-y-4">
-                            <p className="font-black text-3xl text-amber-900 italic font-sans">"{ex.example}"</p>
-                            <div className="bg-white p-6 rounded-2xl border-2 border-amber-100 text-xl font-bold text-slate-600"><span className="text-amber-500 uppercase text-[10px] font-black block mb-2 tracking-widest">Lời khuyên ứng dụng:</span>{ex.solution}</div>
-                         </div>
-                       ))}
-                    </div>
-                  </section>
+                  <section><h3 className="text-3xl font-black text-pink-600 uppercase mb-6 flex items-center gap-3"><div className="w-2.5 h-10 bg-pink-500 rounded-full"></div> KIẾN THỨC CỐT LÕI</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-6">{currentLesson.part1_core.map((point, i) => (<div key={i} className="flex gap-4 items-start bg-slate-50 p-6 rounded-3xl border-2 border-slate-100 shadow-sm"><span className="bg-black text-white w-8 h-8 rounded-full border-2 border-black flex items-center justify-center text-sm font-black shrink-0">{i + 1}</span><p className="text-2xl font-bold text-slate-700 leading-snug">{point}</p></div>))}</div></section>
+                  <section><h3 className="text-3xl font-black text-amber-600 uppercase mb-6 flex items-center gap-3"><div className="w-2.5 h-10 bg-amber-500 rounded-full"></div> MINH HỌA & ỨNG DỤNG</h3><div className="space-y-6">{currentLesson.part2_examples.map((ex, i) => (<div key={i} className="bg-amber-50 border-4 border-dashed border-amber-200 p-8 rounded-[2.5rem] space-y-4"><p className="font-black text-3xl text-amber-900 italic font-sans">"{ex.example}"</p><div className="bg-white p-6 rounded-2xl border-2 border-amber-100 text-xl font-bold text-slate-600"><span className="text-amber-500 uppercase text-[10px] font-black block mb-2 tracking-widest">Lời khuyên ứng dụng:</span>{ex.solution}</div></div>))}</div></section>
                </div>
-               <div className="mt-16 flex justify-center"><button onClick={() => { setFlashcardIdx(0); setShowFlashcardAnswer(false); setStep('flashcards'); }} className="bg-black text-white px-12 py-6 rounded-[2.5rem] font-black text-3xl shadow-comic hover:shadow-none transition-all flex items-center gap-4 active:scale-95">XEM THẺ GHI NHỚ <ArrowRight size={32} /></button></div>
+               <div className="mt-16 flex justify-center"><button onClick={() => { setFlashcardIdx(0); setShowFlashcardAnswer(false); setStep('flashcards'); }} className="bg-black text-white px-12 py-6 rounded-[2.5rem] font-black text-3xl shadow-comic active:scale-95 flex items-center gap-4">XEM THẺ GHI NHỚ <ArrowRight size={32} /></button></div>
             </div>
           </motion.div>
         )}
@@ -459,52 +294,33 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
           <div className="flex flex-col items-center space-y-10 w-full max-w-2xl mx-auto pb-10">
              <div className="text-center"><h2 className="text-4xl font-black uppercase tracking-tighter mb-2">Thẻ ghi nhớ trọng tâm</h2><p className="text-slate-400 font-black tracking-widest uppercase text-xs">Thẻ {flashcardIdx + 1} / {currentLesson.flashcards.length}</p></div>
              <div className="w-full">
-                <div className="bg-white border-4 border-black rounded-[3.5rem] shadow-comic flex flex-col p-12 text-center min-h-[450px] justify-center relative overflow-hidden transition-all duration-300">
-                   <motion.div 
-                     animate={{ y: [0, -5, 0] }}
-                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                     className="absolute top-8 left-1/2 -translate-x-1/2"
-                   >
-                     <div className="bg-pink-100 p-4 rounded-full border-2 border-black"><IdeaIcon size={40} className="text-pink-600" /></div>
-                   </motion.div>
+                <div className="bg-white border-4 border-black rounded-[3.5rem] shadow-comic flex flex-col p-12 text-center min-h-[450px] justify-center relative overflow-hidden">
+                   <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} className="absolute top-8 left-1/2 -translate-x-1/2"><div className="bg-pink-100 p-4 rounded-full border-2 border-black"><IdeaIcon size={40} className="text-pink-600" /></div></motion.div>
                    <div className="space-y-10 mt-10">
                       <h3 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight uppercase italic">"{currentLesson.flashcards[flashcardIdx].front}"</h3>
-                      <AnimatePresence mode="wait">
-                         {showFlashcardAnswer ? <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-slate-50 border-4 border-dashed border-slate-200 p-10 rounded-[2.5rem] shadow-inner"><p className="text-3xl md:text-4xl font-bold text-teal-600 leading-relaxed italic whitespace-pre-line">{currentLesson.flashcards[flashcardIdx].back}</p></motion.div> : <button onClick={() => setShowFlashcardAnswer(true)} className="w-full py-16 border-4 border-dotted border-pink-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-pink-300 hover:text-pink-500 transition-all group active:scale-95"><Eye size={56} className="group-hover:scale-110 transition-transform" /><span className="text-2xl font-black uppercase tracking-widest">Click để lật thẻ</span></button>}
-                      </AnimatePresence>
+                      <AnimatePresence mode="wait">{showFlashcardAnswer ? <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-50 border-4 border-dashed border-slate-200 p-10 rounded-[2.5rem] shadow-inner"><p className="text-3xl md:text-4xl font-bold text-teal-600 leading-relaxed italic whitespace-pre-line">{currentLesson.flashcards[flashcardIdx].back}</p></motion.div> : <button onClick={() => setShowFlashcardAnswer(true)} className="w-full py-16 border-4 border-dotted border-pink-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-pink-300 hover:text-pink-500 transition-all active:scale-95"><Eye size={56} /><span className="text-2xl font-black uppercase tracking-widest">Click để lật thẻ</span></button>}</AnimatePresence>
                    </div>
                 </div>
              </div>
              <div className="flex gap-6 w-full">
-                <button onClick={() => { if(flashcardIdx > 0) { setFlashcardIdx(prev => prev -1); setShowFlashcardAnswer(false); } }} disabled={flashcardIdx === 0} className="flex-1 bg-white border-4 border-black p-6 rounded-3xl font-black text-xl shadow-comic-hover disabled:opacity-30 transition-all">LÙI LẠI</button>
-                {flashcardIdx < currentLesson.flashcards.length - 1 ? <button onClick={() => { setFlashcardIdx(prev => prev + 1); setShowFlashcardAnswer(false); }} className="flex-1 bg-white border-4 border-black p-6 rounded-3xl font-black text-xl shadow-comic-hover transition-all">TIẾP THEO</button> : <button onClick={() => { setQuizIdx(0); setQuizScore(0); setSelectedAnswer(null); setShowExplanation(false); setStep('quiz'); }} className="flex-1 bg-pink-500 text-white border-4 border-black p-6 rounded-3xl font-black text-xl shadow-comic active:scale-95 transition-all">KIỂM TRA NHANH</button>}
+                <button onClick={() => { if(flashcardIdx > 0) { setFlashcardIdx(prev => prev -1); setShowFlashcardAnswer(false); } }} disabled={flashcardIdx === 0} className="flex-1 bg-white border-4 border-black p-6 rounded-3xl font-black text-xl shadow-comic-hover disabled:opacity-30">LÙI LẠI</button>
+                {flashcardIdx < currentLesson.flashcards.length - 1 ? <button onClick={() => { setFlashcardIdx(prev => prev + 1); setShowFlashcardAnswer(false); }} className="flex-1 bg-white border-4 border-black p-6 rounded-3xl font-black text-xl shadow-comic-hover">TIẾP THEO</button> : <button onClick={() => { setQuizIdx(0); setQuizScore(0); setSelectedAnswer(null); setShowExplanation(false); setStep('quiz'); }} className="flex-1 bg-pink-500 text-white border-4 border-black p-6 rounded-3xl font-black text-xl shadow-comic active:scale-95">KIỂM TRA NHANH</button>}
              </div>
           </div>
         )}
 
         {step === 'quiz' && currentLesson && (
           <div className="flex flex-col items-center space-y-10 w-full max-w-3xl mx-auto pb-10">
-             <header className="w-full flex justify-between items-center px-4">
-                <div className="flex items-center gap-4"><motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3, repeat: Infinity }} className="bg-white border-4 border-black w-16 h-16 rounded-2xl flex items-center justify-center shadow-comic-hover"><HelpCircle className="text-pink-500" size={32} /></motion.div><h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Câu hỏi {quizIdx + 1}/{currentLesson.quiz.length}</h2></div>
-                <div className="bg-slate-100 px-8 py-3 rounded-full font-black text-slate-400 border-2 border-slate-200">Đúng: <span className="text-pink-500">{quizScore}</span></div>
-             </header>
-             
+             <header className="w-full flex justify-between items-center px-4"><div className="flex items-center gap-4"><motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3, repeat: Infinity }} className="bg-white border-4 border-black w-16 h-16 rounded-2xl flex items-center justify-center shadow-comic-hover"><HelpCircle className="text-pink-500" size={32} /></motion.div><h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Câu hỏi {quizIdx + 1}/{currentLesson.quiz.length}</h2></div><div className="bg-slate-100 px-8 py-3 rounded-full font-black text-slate-400 border-2 border-slate-200">Đúng: <span className="text-pink-500">{quizScore}</span></div></header>
              <div className="w-full bg-white border-4 border-black rounded-[3.5rem] p-12 shadow-comic min-h-[220px] flex flex-col items-center justify-center text-center relative overflow-hidden">
-                {currentLesson.quiz[quizIdx].isSituational && (
-                  <div className="absolute top-4 left-6 flex items-center gap-2 bg-amber-100 px-3 py-1 rounded-full border-2 border-amber-400">
-                    <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}><Star size={14} className="text-amber-600" /></motion.div>
-                    <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Tình huống ứng dụng</span>
-                  </div>
-                )}
-                <h3 className="text-4xl md:text-5xl font-black text-slate-800 leading-tight font-sans italic">"{currentLesson.quiz[quizIdx].question}"</h3>
+                {currentLesson.quiz[quizIdx].isSituational && (<div className="absolute top-4 left-6 flex items-center gap-2 bg-amber-100 px-3 py-1 rounded-full border-2 border-amber-400"><motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}><Star size={14} className="text-amber-600" /></motion.div><span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Tình huống ứng dụng</span></div>)}
+                <h3 className="text-4xl md:text-5xl font-black text-slate-800 leading-tight italic">"{currentLesson.quiz[quizIdx].question}"</h3>
              </div>
-
              <div className="grid grid-cols-1 gap-5 w-full px-2">
                 {currentLesson.quiz[quizIdx].options.map((opt, i) => {
                   const correctAns = currentLesson!.quiz[quizIdx].answer;
                   const isCorrect = normalizeString(opt) === normalizeString(correctAns);
                   const isSelected = selectedAnswer === opt;
-                  
                   let btnStyle = "bg-white border-slate-200 text-slate-800 hover:border-black";
                   if (selectedAnswer) {
                     if (isCorrect) btnStyle = "bg-emerald-500 text-white border-black scale-95 shadow-none ring-4 ring-emerald-100";
@@ -514,62 +330,32 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
                   return <button key={i} onClick={() => handleQuizAnswer(opt)} className={`p-8 rounded-3xl border-4 font-black text-3xl transition-all shadow-comic hover:shadow-none flex items-center justify-center text-center ${btnStyle}`}>{opt}</button>;
                 })}
              </div>
-             <AnimatePresence>{showExplanation && <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full bg-blue-50 border-4 border-dashed border-blue-200 p-8 rounded-[3rem] space-y-4 shadow-inner"><p className="font-black text-blue-600 uppercase text-xs tracking-widest">💡 Phân tích từ BrainCandy:</p><p className="font-bold text-3xl text-blue-800 italic leading-relaxed whitespace-pre-line">{currentLesson.quiz[quizIdx].explanation}</p><button onClick={nextQuiz} className="mt-6 w-full bg-blue-600 text-white py-6 rounded-2xl font-black text-3xl shadow-comic-hover transition-all active:scale-95 uppercase">{quizIdx < currentLesson!.quiz.length - 1 ? 'Câu kế tiếp' : 'Xem báo cáo'}</button></motion.div>}</AnimatePresence>
+             <AnimatePresence>{showExplanation && <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full bg-blue-50 border-4 border-dashed border-blue-200 p-8 rounded-[3rem] space-y-4 shadow-inner"><p className="font-black text-blue-600 uppercase text-xs tracking-widest">💡 Phân tích từ BrainCandy:</p><p className="font-bold text-3xl text-blue-800 italic leading-relaxed whitespace-pre-line">{currentLesson.quiz[quizIdx].explanation}</p><button onClick={nextQuiz} className="mt-6 w-full bg-blue-600 text-white py-6 rounded-2xl font-black text-3xl shadow-comic-hover active:scale-95 uppercase">{quizIdx < currentLesson!.quiz.length - 1 ? 'Câu kế tiếp' : 'Xem báo cáo'}</button></motion.div>}</AnimatePresence>
           </div>
         )}
 
         {step === 'personalization' && (
           <div className="flex flex-col items-center space-y-10 w-full max-w-4xl mx-auto pb-20">
-             <div className="text-center space-y-4">
-                <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Kết quả nỗ lực</h2>
-                <p className="text-slate-400 font-bold text-2xl tracking-[0.1em] uppercase">{studentName}</p>
-             </div>
+             <div className="text-center space-y-4"><h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Kết quả nỗ lực</h2><p className="text-slate-400 font-bold text-2xl tracking-[0.1em] uppercase">{studentName}</p></div>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
                 <div className="md:col-span-1 space-y-6">
-                   <div className="bg-white border-4 border-black p-10 rounded-[3rem] shadow-comic flex flex-col items-center gap-6 text-center relative overflow-hidden">
-                      <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }} className={`w-28 h-28 rounded-full border-4 border-black flex items-center justify-center text-5xl font-black ${quizScore >= (currentLesson?.quiz.length || 3) ? 'bg-emerald-400' : 'bg-yellow-400'}`}>{quizScore}/{currentLesson?.quiz.length || 3}</motion.div>
-                      <div><p className="font-black text-slate-900 uppercase text-lg">Độ thấu hiểu</p></div>
-                   </div>
-                   <div className="bg-white border-4 border-black p-8 rounded-[3rem] shadow-comic flex flex-col items-center gap-4"><label className="text-xs font-black text-slate-400 uppercase tracking-widest">Cảm nhận của bạn?</label><div className="flex gap-2 w-full">{['Thấp', 'Trung bình', 'Cao'].map(c => (<button key={c} onClick={() => setConfidence(c as any)} className={`flex-1 py-3 rounded-2xl border-2 font-black text-sm transition-all ${confidence === c ? 'bg-black text-white border-black shadow-md' : 'bg-slate-50 text-slate-300 border-slate-100 hover:border-black'}`}>{c}</button>))}</div></div>
+                   <div className="bg-white border-4 border-black p-10 rounded-[3rem] shadow-comic flex flex-col items-center gap-6 text-center relative overflow-hidden"><motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }} className={`w-28 h-28 rounded-full border-4 border-black flex items-center justify-center text-5xl font-black ${quizScore >= (currentLesson?.quiz.length || 3) ? 'bg-emerald-400' : 'bg-yellow-400'}`}>{quizScore}/{currentLesson?.quiz.length || 3}</motion.div><div><p className="font-black text-slate-900 uppercase text-lg">Độ thấu hiểu</p></div></div>
+                   <div className="bg-white border-4 border-black p-8 rounded-[3rem] shadow-comic flex flex-col items-center gap-4"><label className="text-xs font-black text-slate-400 uppercase tracking-widest">Cảm nhận?</label><div className="flex gap-2 w-full">{['Thấp', 'Trung bình', 'Cao'].map(c => (<button key={c} onClick={() => setConfidence(c as any)} className={`flex-1 py-3 rounded-2xl border-2 font-black text-sm transition-all ${confidence === c ? 'bg-black text-white border-black shadow-md' : 'bg-slate-50 text-slate-300 border-slate-100 hover:border-black'}`}>{c}</button>))}</div></div>
                    <div className="bg-amber-100 border-4 border-black p-8 rounded-[3rem] shadow-comic flex items-center gap-6"><motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 3, repeat: Infinity }} className="bg-white p-4 rounded-2xl border-2 border-black shadow-sm"><Timer size={32} className="text-amber-600" /></motion.div><div><p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Thời lượng học</p><p className="text-2xl font-black text-slate-900 leading-none mt-1">{Math.floor((Date.now() - startTime) / 60000)} phút</p></div></div>
                 </div>
-                
                 <div className="md:col-span-2 bg-white border-4 border-black rounded-[4rem] p-10 md:p-14 shadow-comic relative overflow-hidden flex flex-col">
-                   {/* Certified Stamp */}
                    <AnimatePresence>
                      {showCertifiedStamp && (
-                       <motion.div 
-                        initial={{ scale: 3, opacity: 0, rotate: 20 }}
-                        animate={{ scale: 1, opacity: 0.9, rotate: -15 }}
-                        className="absolute top-10 right-10 z-20 pointer-events-none"
-                       >
-                          <div className="border-[8px] border-red-600 rounded-full w-40 h-40 flex flex-col items-center justify-center p-2 text-red-600 mix-blend-multiply drop-shadow-lg">
-                             <div className="border-4 border-dashed border-red-600 rounded-full w-full h-full flex flex-col items-center justify-center">
-                                <span className="text-[10px] font-black uppercase tracking-widest mb-1">Passport</span>
-                                <h1 className="text-3xl font-black leading-none uppercase text-center">PASSED</h1>
-                                <span className="text-[8px] font-bold uppercase mt-1">BrainCandy AI</span>
-                             </div>
-                          </div>
+                       <motion.div initial={{ scale: 3, opacity: 0, rotate: 20 }} animate={{ scale: 1, opacity: 0.9, rotate: -15 }} className="absolute top-10 right-10 z-20 pointer-events-none">
+                          <div className="border-[8px] border-red-600 rounded-full w-40 h-40 flex flex-col items-center justify-center p-2 text-red-600 mix-blend-multiply drop-shadow-lg"><div className="border-4 border-dashed border-red-600 rounded-full w-full h-full flex flex-col items-center justify-center"><span className="text-[10px] font-black uppercase tracking-widest mb-1">Passport</span><h1 className="text-3xl font-black leading-none uppercase text-center">PASSED</h1><span className="text-[8px] font-bold uppercase mt-1">BrainCandy AI</span></div></div>
                        </motion.div>
                      )}
                    </AnimatePresence>
-
                    <div className="absolute top-0 right-0 bg-pink-500 text-white px-8 py-3 rounded-bl-[3rem] font-black text-sm border-l-4 border-b-4 border-black uppercase tracking-widest italic">Phân tích nỗ lực</div>
-                   <div className="flex-1 space-y-8">
-                      <div className="flex items-center gap-5 mb-4">
-                         <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center text-pink-500 border-2 border-black shadow-sm"><Smile size={32} /></motion.div>
-                         <h3 className="text-3xl font-black text-slate-900 uppercase italic leading-none">Từ BrainCandy AI</h3>
-                      </div>
-                      <div className="prose prose-slate max-w-none">
-                         <p className="text-3xl font-bold text-slate-700 leading-relaxed italic whitespace-pre-line">"{personalFeedback}"</p>
-                      </div>
-                   </div>
-                   <div className="mt-12 pt-10 border-t-4 border-dashed border-slate-100 flex flex-col md:flex-row gap-6">
-                      <button onClick={() => { setStep('setup'); setCurrentLesson(null); setMainCategory('selection'); setSelectedSubject(''); }} className="flex-1 bg-black text-white py-6 rounded-3xl font-black text-3xl shadow-comic uppercase tracking-wider transition-all active:scale-95">HỌC CHỦ ĐỀ KHÁC</button>
-                   </div>
+                   <div className="flex-1 space-y-8"><div className="flex items-center gap-5 mb-4"><motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center text-pink-500 border-2 border-black shadow-sm"><Smile size={32} /></motion.div><h3 className="text-3xl font-black text-slate-900 uppercase italic leading-none">Từ BrainCandy AI</h3></div><div className="prose prose-slate max-w-none"><p className="text-3xl font-bold text-slate-700 leading-relaxed italic whitespace-pre-line">"{personalFeedback}"</p></div></div>
+                   <div className="mt-12 pt-10 border-t-4 border-dashed border-slate-100 flex flex-col md:flex-row gap-6"><button onClick={() => { setStep('setup'); setCurrentLesson(null); setMainCategory('selection'); setSelectedSubject(''); }} className="flex-1 bg-black text-white py-6 rounded-3xl font-black text-3xl shadow-comic uppercase tracking-wider transition-all active:scale-95">HỌC CHỦ ĐỀ KHÁC</button></div>
                 </div>
              </div>
-             <div className="text-center max-w-lg"><p className="text-slate-400 font-bold text-sm italic tracking-wide leading-relaxed">Hãy biến mỗi bài học thành một "viên kẹo" ngọt ngào cho tương lai của bạn. Tuyệt vời vì bạn đã không ngừng cố gắng!</p></div>
           </div>
         )}
       </div>
@@ -578,27 +364,7 @@ const BrainCandyScreen: React.FC<Props> = ({ studentName, studentId, onBack }) =
 };
 
 const SelectionModeCard = ({ title, desc, icon, color, onClick, index }: any) => (
-  <motion.button 
-    whileHover={{ scale: 1.05, rotate: 1 }}
-    whileTap={{ scale: 0.95 }}
-    onClick={onClick}
-    className={`${color} border-4 border-black p-12 rounded-[4rem] shadow-comic flex flex-col items-center gap-8 group`}
-  >
-     <motion.div 
-        animate={{ y: [0, -5, 0], rotate: [0, 5, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: index * 0.3 }}
-        className="bg-white p-8 rounded-full border-4 border-black shadow-comic-hover group-hover:rotate-12 transition-transform"
-     >
-        {icon}
-     </motion.div>
-     <div className="text-center">
-        <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic mb-3 leading-none">{title}</h3>
-        <p className="text-2xl font-bold text-slate-500 italic font-sans max-w-xs">{desc}</p>
-     </div>
-     <div className="mt-4 bg-black text-white px-10 py-4 rounded-full font-black text-2xl uppercase tracking-widest flex items-center gap-3 shadow-md">
-        Khám phá ngay <ArrowRight size={20}/>
-     </div>
-  </motion.button>
+  <motion.button whileHover={{ scale: 1.05, rotate: 1 }} whileTap={{ scale: 0.95 }} onClick={onClick} className={`${color} border-4 border-black p-12 rounded-[4rem] shadow-comic flex flex-col items-center gap-8 group`}><motion.div animate={{ y: [0, -5, 0], rotate: [0, 5, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: index * 0.3 }} className="bg-white p-8 rounded-full border-4 border-black shadow-comic-hover group-hover:rotate-12 transition-transform">{icon}</motion.div><div className="text-center"><h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic mb-3 leading-none">{title}</h3><p className="text-2xl font-bold text-slate-500 italic font-sans max-w-xs">{desc}</p></div><div className="mt-4 bg-black text-white px-10 py-4 rounded-full font-black text-2xl uppercase tracking-widest flex items-center gap-3 shadow-md">Khám phá ngay <ArrowRight size={20}/></div></motion.button>
 );
 
 export default BrainCandyScreen;
