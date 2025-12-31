@@ -1,8 +1,8 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Cấu hình tập trung cho AI Services
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// Strictly follow initialization: Obtain exclusively from process.env.API_KEY
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
  * Service xử lý các tác vụ phân tích phức tạp (Writing, Solving)
@@ -10,7 +10,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
  */
 export const complexAnalysisService = {
   async solveHomework(imageBase64: string | null, description: string) {
-    const model = ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
       contents: {
         parts: [
@@ -19,12 +19,11 @@ export const complexAnalysisService = {
         ]
       }
     });
-    const response = await model;
     return response.text;
   },
 
   async assessWriting(text: string, imageBase64: string | null) {
-    const model = ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
       contents: {
         parts: [
@@ -34,7 +33,6 @@ export const complexAnalysisService = {
       },
       config: { systemInstruction: "Trả lời bằng Tiếng Việt, định dạng Markdown." }
     });
-    const response = await model;
     return response.text;
   }
 };
@@ -77,7 +75,7 @@ export const fastResponseService = {
   },
 
   async chatSupport(userMsg: string, history: any[], systemInstruction: string) {
-    const chat = ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
         ...history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
@@ -85,7 +83,6 @@ export const fastResponseService = {
       ],
       config: { systemInstruction }
     });
-    const response = await chat;
     return response.text;
   }
 };
