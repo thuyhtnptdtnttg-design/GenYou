@@ -50,6 +50,26 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizAnswered, setQuizAnswered] = useState<string | null>(null);
   const [totalScore, setTotalScore] = useState(0);
+  const [showCertifiedStamp, setShowCertifiedStamp] = useState(false);
+
+  // Trigger stamp on perfect score
+  useEffect(() => {
+    if (step === 'result' && totalScore === cards.length && cards.length > 0) {
+      const timer = setTimeout(() => setShowCertifiedStamp(true), 600);
+      return () => clearTimeout(timer);
+    } else if (step !== 'result') {
+      setShowCertifiedStamp(false);
+    }
+  }, [step, totalScore, cards.length]);
+
+  // Hàm chuẩn hóa chuỗi cực kỳ mạnh mẽ để so sánh chính xác nhất
+  const normalizeString = (str: string) => {
+    if (!str) return "";
+    return str.trim()
+              .toLowerCase()
+              .replace(/[.,!?;:]+$/, "") // Loại bỏ mọi dấu câu ở cuối chuỗi
+              .replace(/\s+/g, " ");     // Thu gọn mọi khoảng trắng thừa thành 1 dấu cách duy nhất
+  };
 
   const generateCardsFromAI = async (input: string, isSingleWord: boolean) => {
     setLoading(true);
@@ -59,6 +79,8 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
       Nhiệm vụ: Thiết kế bộ thẻ học từ vựng chuẩn quốc tế cho ${isSingleWord ? `từ: "${input}"` : `${wordCount} từ về chủ đề: "${input}"`} trình độ ${level}.
       
       Yêu cầu đầu ra JSON chuẩn xác gồm 14 thành phần cho mỗi thẻ:
+      QUAN TRỌNG: Trong phần "miniQuiz", giá trị "answer" PHẢI khớp chính xác từng ký tự (không thừa dấu cách hay dấu chấm ở cuối) với 1 trong các giá trị trong mảng "options".
+      
       [{
         "front": "Từ chính",
         "ipa": "IPA UK /.../ | US /.../",
@@ -75,8 +97,8 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
         "cefr": "${level}",
         "miniQuiz": {
           "question": "Câu hỏi kiểm tra nhanh (Fill-in-the-blank)",
-          "options": ["A", "B", "C", "D"],
-          "answer": "Đáp án đúng"
+          "options": ["Lựa chọn A", "Lựa chọn B", "Lựa chọn C", "Lựa chọn D"],
+          "answer": "Lựa chọn đúng nhất (không chứa dấu câu cuối dòng)"
         }
       }]`;
       
@@ -122,7 +144,11 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
   const handleQuizChoice = (option: string, answer: string) => {
     if (quizAnswered) return;
     setQuizAnswered(option);
-    if (option === answer) setTotalScore(prev => prev + 1);
+    
+    // Sử dụng chuẩn hóa chuỗi để kiểm tra đáp án chính xác
+    const isCorrect = normalizeString(option) === normalizeString(answer);
+    
+    if (isCorrect) setTotalScore(prev => prev + 1);
 
     setTimeout(() => {
       if (quizIdx < cards.length - 1) {
@@ -140,9 +166,13 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
         <div className="w-full max-w-3xl space-y-8">
           <header className="flex justify-between items-center bg-white border-4 border-black p-6 rounded-[2.5rem] shadow-comic">
             <div className="flex items-center gap-4">
-               <div className="p-3 bg-teal-400 rounded-2xl border-2 border-black rotate-[-3deg] shadow-comic-hover text-white">
+               <motion.div 
+                 animate={{ y: [0, -3, 0], rotate: [-2, 2, -2] }}
+                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                 className="p-3 bg-teal-400 rounded-2xl border-2 border-black shadow-comic-hover text-white"
+               >
                  <Languages size={32} />
-               </div>
+               </motion.div>
                <div>
                   <h2 className="text-3xl font-black text-slate-900 leading-none uppercase italic">Vocab Master</h2>
                   <p className="text-slate-500 font-bold text-sm">International Standard Flashcards</p>
@@ -232,7 +262,13 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
                 <div className="absolute top-8 left-8 bg-black text-white px-4 py-1.5 rounded-full text-xs font-black border-2 border-black">
                     CEFR {card.cefr}
                 </div>
-                <h2 className="text-6xl md:text-8xl font-black text-slate-900 mb-6 tracking-tighter uppercase">{card.front}</h2>
+                <motion.h2 
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="text-6xl md:text-8xl font-black text-slate-900 mb-6 tracking-tighter uppercase"
+                >
+                  {card.front}
+                </motion.h2>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6">
                     <div className="bg-slate-50 px-8 py-4 rounded-3xl border-2 border-slate-200 shadow-sm flex items-center gap-4">
                         <p className="text-xl md:text-2xl font-bold text-slate-400 italic font-sans">{card.ipa}</p>
@@ -256,9 +292,13 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
                         onClick={() => setShowDetails(true)}
                         className="w-full py-20 border-4 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center gap-4 text-slate-400 hover:text-teal-500 hover:border-teal-200 transition-all group"
                     >
-                        <div className="p-5 bg-slate-50 rounded-full group-hover:bg-teal-50 transition-colors">
+                        <motion.div 
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="p-5 bg-slate-50 rounded-full group-hover:bg-teal-50 transition-colors"
+                        >
                             <Eye size={48} />
-                        </div>
+                        </motion.div>
                         <span className="text-2xl font-black uppercase tracking-tighter">Click để hiện thông tin chi tiết</span>
                     </button>
                 ) : (
@@ -269,7 +309,13 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
                     >
                         <div className="flex flex-col items-center text-center">
                             <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-2">Vietnamese Meaning</h3>
-                            <p className="text-4xl md:text-5xl font-black text-teal-600 tracking-tight leading-none">{card.back}</p>
+                            <motion.p 
+                              animate={{ y: [0, -2, 0] }}
+                              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                              className="text-4xl md:text-5xl font-black text-teal-600 tracking-tight leading-none"
+                            >
+                              {card.back}
+                            </motion.p>
                         </div>
 
                         <div className="bg-slate-50 border-2 border-black p-8 rounded-[2.5rem] relative">
@@ -289,7 +335,12 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
 
                             <div className="space-y-6">
                                 <div className="bg-amber-50 border-4 border-amber-200 p-6 rounded-[2rem] flex gap-4 items-start shadow-sm">
-                                    <Lightbulb className="text-amber-500 shrink-0 mt-1" size={28} />
+                                    <motion.div
+                                      animate={{ rotate: [0, 10, -10, 0] }}
+                                      transition={{ duration: 4, repeat: Infinity }}
+                                    >
+                                      <Lightbulb className="text-amber-500 shrink-0 mt-1" size={28} />
+                                    </motion.div>
                                     <div>
                                         <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block mb-1">Memory Tip (Cognitive)</span>
                                         <p className="text-sm font-bold text-amber-900 italic">"{card.memoryTip}"</p>
@@ -332,7 +383,13 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
          <div className="w-full max-w-2xl z-10 space-y-8 pt-10">
             <header className="w-full flex justify-between items-center">
                <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3 uppercase tracking-tighter">
-                  <Brain size={32} className="text-blue-500" /> ASSESSMENT MINI
+                  <motion.div
+                    animate={{ rotate: [0, 15, -15, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                  >
+                    <Brain size={32} className="text-blue-500" />
+                  </motion.div> 
+                  ASSESSMENT MINI
                </h2>
                <div className="text-xl font-black text-blue-500 bg-white px-6 py-2 rounded-full border-4 border-black shadow-sm">
                  {quizIdx + 1} / {cards.length}
@@ -348,7 +405,8 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                {currentQ.options.map((opt, i) => {
-                 const isCorrect = opt === currentQ.answer;
+                 // So sánh đã chuẩn hóa để hiển thị trạng thái đúng/sai trực quan
+                 const isCorrect = normalizeString(opt) === normalizeString(currentQ.answer);
                  const isSelected = quizAnswered === opt;
                  
                  let btnStyle = "bg-white text-slate-800 border-slate-200 hover:border-black";
@@ -373,8 +431,8 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
 
             {quizAnswered && (
                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-                  <p className={`font-black text-xl uppercase tracking-widest ${quizAnswered === currentQ.answer ? 'text-green-600' : 'text-red-600'}`}>
-                    {quizAnswered === currentQ.answer ? 'Excellent!' : 'Keep trying!'}
+                  <p className={`font-black text-xl uppercase tracking-widest ${normalizeString(quizAnswered) === normalizeString(currentQ.answer) ? 'text-green-600' : 'text-red-600'}`}>
+                    {normalizeString(quizAnswered) === normalizeString(currentQ.answer) ? 'Excellent!' : 'Keep trying!'}
                   </p>
                </motion.div>
             )}
@@ -387,7 +445,26 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
     const accuracy = Math.round((totalScore / cards.length) * 100);
     return (
       <div className="min-h-screen bg-white p-4 flex flex-col items-center justify-center font-hand relative">
-         <div className="w-full max-w-lg bg-[#F8FAFC] border-4 border-black rounded-[4rem] p-12 shadow-comic text-center space-y-10">
+         <div className="w-full max-w-lg bg-[#F8FAFC] border-4 border-black rounded-[4rem] p-12 shadow-comic text-center space-y-10 relative overflow-hidden">
+            {/* Passport Stamp Effect */}
+            <AnimatePresence>
+              {showCertifiedStamp && (
+                <motion.div 
+                  initial={{ scale: 4, opacity: 0, rotate: 30 }}
+                  animate={{ scale: 1, opacity: 0.9, rotate: -15 }}
+                  className="absolute top-6 right-6 z-20 pointer-events-none"
+                >
+                  <div className="border-[6px] border-red-600 rounded-full w-32 h-32 flex flex-col items-center justify-center p-1 text-red-600 mix-blend-multiply drop-shadow-md">
+                    <div className="border-2 border-dashed border-red-600 rounded-full w-full h-full flex flex-col items-center justify-center">
+                       <span className="text-[8px] font-black uppercase tracking-widest mb-0.5">Passport</span>
+                       <h1 className="text-2xl font-black leading-none uppercase text-center">PASSED</h1>
+                       <span className="text-[6px] font-bold uppercase mt-0.5">Vocab Master AI</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10 }}>
                {accuracy === 100 ? (
                  <div className="relative inline-block">
@@ -433,7 +510,13 @@ const StudyHubFlashcards: React.FC<Props> = ({ onBack }) => {
 const DetailItem = ({ icon, label, value, color }: any) => (
   <div className={`p-5 rounded-2xl border-2 border-black shadow-sm ${color} transition-all hover:scale-102`}>
      <div className="flex items-center gap-2 mb-1">
-        <div className="bg-white p-1 rounded-lg border-2 border-black/10">{icon}</div>
+        <motion.div 
+          animate={{ y: [0, -2, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="bg-white p-1 rounded-lg border-2 border-black/10"
+        >
+          {icon}
+        </motion.div>
         <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</span>
      </div>
      <p className="text-sm font-bold leading-tight">{value}</p>
